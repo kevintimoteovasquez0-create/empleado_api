@@ -1,0 +1,1 @@
+ALTER TABLE "rol" ADD COLUMN "descripciondos" varchar(150) NOT NULL;
