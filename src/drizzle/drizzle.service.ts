@@ -9,32 +9,26 @@ export class DrizzleService implements OnModuleInit, OnModuleDestroy {
   private db: NodePgDatabase;
 
   async onModuleInit() {
-
     console.log('Conectando a la base de datos...');
 
     this.pool = new Pool({
       connectionString: envs.dataBaseUrl,
+      max: 30,
+      idleTimeoutMillis: 60000, //1 minuto
+      connectionTimeoutMillis: 5000, //5 segundos
     });
-
-    try {
-      const client = await this.pool.connect(); // obtiene un cliente
-      console.log('PostgreSQL conectado correctamente');
-      client.release(); // libera inmediatamente el cliente
-    } catch (err) {
-      console.error('Error de conexión a PostgreSQL:', err);
-      process.exit(1);
-    }
 
     this.db = drizzle({ client: this.pool });
   }
 
   getDb(): NodePgDatabase {
+    if (!this.db) {
+      throw new Error('Database no inicializada');
+    }
     return this.db;
   }
 
   async onModuleDestroy() {
-    console.log('Cerrando conexión de PostgreSQL...');
     await this.pool.end();
-    console.log('Conexión cerrada correctamente');
   }
 }

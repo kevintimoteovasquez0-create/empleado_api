@@ -4,7 +4,7 @@ import { AccesoController } from './acceso.controller';
 import { DrizzleModule } from '../drizzle/drizzle.module';
 
 @Module({
-  imports: [DrizzleModule], // 👈 2. Agrega esto
+  imports: [DrizzleModule],
   controllers: [AccesoController],
   providers: [AccesoService],
 })
