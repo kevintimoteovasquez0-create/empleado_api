@@ -5,10 +5,9 @@ import { LoginDto } from './dto/login.dto';
 import { EmailDto } from 'src/email/dto/email.dto';
 import { TwoFactorAuth } from './dto/two_factor_auth.dto';
 import { NewTwoFactorCode } from './dto/new_two_facto_code.dto';
-import { Response } from 'express';
-import { UsuarioService } from 'src/usuario/usuario.service';
+import type { Response } from 'express';
 import { AuthGuard } from './guards/auth.guard';
-import { AuthRequest } from './interfaces/auth-request';
+import type { AuthRequest } from './interfaces/auth-request';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -16,7 +15,6 @@ export class AuthController {
 
   constructor(
     private readonly authService: AuthService,
-    private readonly usuarioService: UsuarioService
   ) {}
 
   @Get('/me')

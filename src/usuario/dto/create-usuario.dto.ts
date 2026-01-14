@@ -1,7 +1,7 @@
-import { TipoDocumentoUsuario } from "@prisma/client";
 import { Transform, Type } from "class-transformer";
 import { IsDate, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from "class-validator";
 import { TipoDocumentoUsuarioList } from "../enum/usuario.enum";
+import type { TipoDocumentoUsuarioType } from "../enum/usuario.enum";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class CreateUsuarioDto {
@@ -31,7 +31,7 @@ export class CreateUsuarioDto {
   @IsEnum(TipoDocumentoUsuarioList, {
     message: `Solamente estan permitidos los siguientes tipos de documento ${TipoDocumentoUsuarioList}`
   })
-  tipo_documento: TipoDocumentoUsuario;
+  tipo_documento: TipoDocumentoUsuarioType;
 
   @ApiProperty({ description: 'Número de documento del usuario', example: '12345678' })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))

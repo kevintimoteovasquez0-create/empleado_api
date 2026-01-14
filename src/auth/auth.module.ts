@@ -2,15 +2,15 @@ import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsuarioModule } from 'src/usuario/usuario.module';
-import { PrismaModule } from 'src/prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './constants/jwt.constant';
 import { EmailModule } from 'src/email/email.module';
+import { DrizzleModule } from 'src/drizzle/drizzle.module';
 
 @Module({
   imports: [
     UsuarioModule,
-    PrismaModule,
+    DrizzleModule,
     EmailModule,
     JwtModule.register({
       global: true,

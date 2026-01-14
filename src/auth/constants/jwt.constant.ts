@@ -1,11 +1,9 @@
-import * as dotenv from 'dotenv';
+import { envs } from 'src/config';
 
-dotenv.config();
-
-if (!process.env.JWT_SECRET) {
+if (envs.jwtSecret) {
     throw new Error("JWT_SECRET no está definido en las variables de entorno");
 }
 
 export const jwtConstants = {
-    secret: process.env.JWT_SECRET,
+    secret: envs.jwtSecret,
 };

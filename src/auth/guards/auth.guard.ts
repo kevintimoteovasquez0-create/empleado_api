@@ -7,18 +7,27 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../../prisma/prisma.service';
 import { jwtConstants } from '../constants/jwt.constant';
 import { Request, Response } from 'express';
 import { ACCESO_KEY } from '../decorators/acceso.decorator';
+import { DrizzleService } from 'src/drizzle/drizzle.service';
+import { Rol_Acceso_Table } from 'src/drizzle/schema/rol_acceso';
+import { eq } from 'drizzle-orm';
+import { RolTable } from 'src/drizzle/schema/rol';
+import { AccesoTable } from 'src/drizzle/schema/acceso';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+
+  private readonly db;
+
   constructor(
-    private jwtService: JwtService,
-    private prisma: PrismaService, // 🔹 Consultar accesos en la BD
-    private reflector: Reflector,  
-  ) {}
+    private readonly jwtService: JwtService,
+    private readonly drizzleService: DrizzleService, // 🔹 Consultar accesos en la BD
+    private readonly reflector: Reflector,  
+  ) {
+    this.db = drizzleService.getDb();
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
@@ -42,10 +51,24 @@ export class AuthGuard implements CanActivate {
 
       if (requiredAccesses) {
         // 🔹 Consultar accesos del usuario en la BD según su rol
-        const userAccesses = await this.prisma.rol_Acceso.findMany({
-          where: { rol_id: payload.rol_id },
-          include: { acceso: true },
-        });
+
+        const userAccesses = await this.db
+          .select({
+            rol: {
+              id: RolTable.id
+            },
+            acceso: {
+              id: AccesoTable.id,
+              path: AccesoTable.path,
+              descripcion: AccesoTable.descripcion
+            }
+          })
+          .from(Rol_Acceso_Table)
+          .innerJoin(RolTable, eq(Rol_Acceso_Table.rol_id, RolTable.id))
+          .innerJoin(AccesoTable, eq(Rol_Acceso_Table.acceso_id, AccesoTable.id))
+          .where(
+            eq(Rol_Acceso_Table.rol_id, payload.rol_id)
+          )
 
         const userAccessNames = userAccesses.map(a => a.acceso.path); // Obtener nombres de accesos
 

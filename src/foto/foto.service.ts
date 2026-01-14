@@ -1,17 +1,12 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as moment from 'moment-timezone';
-import { Injectable, BadRequestException, forwardRef, Inject } from '@nestjs/common';
-import { UsuarioService } from 'src/usuario/usuario.service';
-import { LocalService } from 'src/local/local.service';
+import fs from 'fs';
+import path from 'path';
+import moment from 'moment-timezone';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { envs } from 'src/config';
 
 @Injectable()
 export class FotoService {
-  constructor(
-    @Inject(forwardRef(() => UsuarioService)) private readonly usuarioService: UsuarioService,
-    @Inject(forwardRef(() => LocalService)) private readonly localService: LocalService
-  ) {}
+  constructor() {}
 
   private directorioUploads = 'uploads';
 
@@ -118,9 +113,6 @@ export class FotoService {
     }
 
     const nuevaRuta = await this.guardarImagen(id, entidad, archivo);
-    
-    // // Actualizar la BD con la nueva URL
-    // await this.usuarioService.updatefotoUrlUsuario(id, { foto_url: nuevaRuta })
 
     return nuevaRuta;
 
@@ -143,9 +135,6 @@ export class FotoService {
       this.eliminarImagenAnterior(entidad, id, nombre);
     }
     
-    // // Actualizar la BD con la nueva URL
-    // await this.localService.updatefotoUrlLocal(local_id, nuevasRutas);
-
     return nuevosNombres;
 
   }

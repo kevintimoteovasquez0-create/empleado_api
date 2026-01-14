@@ -25,7 +25,7 @@ async function main() {
     }).returning();
 
     const [empresa] = await db.insert(EmpresaTable).values({
-      razonSocial: "Empresa de carnes",
+      razon_social: "Empresa de carnes",
       ruc: "12345678911"
     }).returning();
 
@@ -48,15 +48,15 @@ async function main() {
     // Crear las relaciones en la tabla intermedia "rol_acceso"
     await db.insert(Rol_Acceso_Table).values(
       accesos.map((acceso) => ({
-        rolId: adminRole.id,
-        accesoId: acceso.id,
+        rol_id: adminRole.id,
+        acceso_id: acceso.id,
       }))
     );
 
     await db.insert(Rol_Acceso_Table).values(
       accesos.map((acceso) => ({
-        rolId: adminRoleSegundo.id,
-        accesoId: acceso.id,
+        rol_id: adminRoleSegundo.id,
+        acceso_id: acceso.id,
       }))
     );
 
@@ -65,10 +65,10 @@ async function main() {
     const usuarioData = {
       nombre: 'usuario',
       apellido: 'apellidousuario',
-      tipoDocumento: "DNI" as const,  
-      numeroDocumento: '78945612',  
-      fechaNacimiento: new Date('1990-01-01').toISOString(),  
-      fechaIngreso: new Date().toISOString(),
+      tipo_documento: "DNI" as const,  
+      numero_documento: '78945612',  
+      fecha_nacimiento: new Date('1990-01-01').toISOString(),  
+      fecha_ingreso: new Date().toISOString(),
       direccion: 'Av. Siempre Viva 742',
       pais: 'Perú',
       departamento: 'Lima',
@@ -77,19 +77,19 @@ async function main() {
       telefono: '987654321',
       email: 'empresoftperu@gmail.com',
       password: hashedPassword,
-      rolId: adminRole.id, 
-      empresaId: empresa.id, 
-      nombreImagen: 'empresoft.jpg',
-      verificadoEmail: true, 
+      rol_id: adminRole.id, 
+      empresa_id: empresa.id, 
+      nombre_imagen: 'empresoft.jpg',
+      verificado_email: true, 
     };
 
     const usuarioDataDos = {
       nombre: 'Carlos',
       apellido: 'Ramírez Torres',
-      tipoDocumento: "DNI" as const,
-      numeroDocumento: '45612378',
-      fechaNacimiento: new Date('1992-06-15').toISOString(),
-      fechaIngreso: new Date().toISOString(),
+      tipo_documento: "DNI" as const,
+      numero_documento: '45612378',
+      fecha_nacimiento: new Date('1992-06-15').toISOString(),
+      fecha_ingreso: new Date().toISOString(),
       direccion: 'Calle Los Olivos 123',
       pais: 'Perú',
       departamento: 'Lima',
@@ -98,10 +98,10 @@ async function main() {
       telefono: '956123789',
       email: 'leonsaavedrajosefabian573@gmail.com',
       password: hashedPassword,
-      rolId: adminRoleSegundo.id,  
-      empresaId: empresa.id,
-      nombreImagen: 'empresoft.jpg',
-      verificadoEmail: true, 
+      rol_id: adminRoleSegundo.id,  
+      empresa_id: empresa.id,
+      nombre_imagen: 'empresoft.jpg',
+      verificado_email: true, 
     };
     
     // Creación en Prisma

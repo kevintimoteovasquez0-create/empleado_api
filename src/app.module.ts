@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from './prisma/prisma.module';
 import { UsuarioModule } from './usuario/usuario.module';
 import { AuthModule } from './auth/auth.module';
 import { EmailModule } from './email/email.module';
@@ -15,8 +14,7 @@ import { DrizzleModule } from './drizzle/drizzle.module';
   imports: [
     UsuarioModule, 
     AuthModule, 
-    EmailModule, 
-    PrismaModule, 
+    EmailModule,
     RolModule, 
     AccesoModule, 
     ReniecModule, 

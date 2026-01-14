@@ -4,7 +4,7 @@ export const AreaTrabajoTable = pgTable('areaTrabajo', {
     id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
     nombre: varchar('nombre', { length: 50 }).notNull(),
     descripcion: varchar('descripcion', { length: 150 }).notNull(),
-    estadoRegistro: boolean('estado_registro').default(true).notNull(),
-    createdAt: timestamp('createdAt').defaultNow().notNull(),
-    updatedAt: timestamp('updatedAt').defaultNow().$onUpdate(() => new Date()).notNull()
+    estado_registro: boolean('estado_registro').default(true).notNull(),
+    created_at: timestamp('createdAt').defaultNow().notNull(),
+    updated_at: timestamp('updatedAt').defaultNow().$onUpdate(() => new Date()).notNull()
 })

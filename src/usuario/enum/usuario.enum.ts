@@ -1,6 +1,4 @@
-import { TipoDocumentoUsuario } from "@prisma/client"
+import { TipoDocumentoUsuario } from "src/drizzle/schema/usuario"
 
-export const TipoDocumentoUsuarioList = [
-  TipoDocumentoUsuario.DNI,
-  TipoDocumentoUsuario.CARNETEXTRANJERIA
-]
+export const TipoDocumentoUsuarioList = TipoDocumentoUsuario.enumValues;
+export type TipoDocumentoUsuarioType = (typeof TipoDocumentoUsuario.enumValues)[number];
