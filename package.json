@@ -21,6 +21,7 @@
     "seed": "ts-node src/drizzle/seeds/seed.ts"
   },
   "dependencies": {
+    "@getbrevo/brevo": "^3.0.1",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",

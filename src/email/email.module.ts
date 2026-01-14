@@ -1,15 +1,12 @@
-import { Module } from "@nestjs/common";
-import { EmailService } from "./email.service";
-import { PrismaModule } from "src/prisma/prisma.module";
-import { EmailController } from "./email.controller";
+import { Module } from '@nestjs/common';
+import { EmailService } from './email.service';
+import { EmailController } from './email.controller';
+import { DrizzleModule } from '../drizzle/drizzle.module'; // 👈 IMPORTANTE
 
 @Module({
-
-    imports: [PrismaModule],
-    controllers: [EmailController],
-    providers: [EmailService],
-    exports: [EmailService]
-
+  imports: [DrizzleModule], // 👈 Cambiamos Prisma por Drizzle
+  controllers: [EmailController],
+  providers: [EmailService],
+  exports: [EmailService],
 })
-
-export class EmailModule{}
+export class EmailModule {}
