@@ -5,7 +5,6 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { EmailService } from 'src/email/email.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,15 +18,23 @@ import { envs } from 'src/config';
 import { Response } from 'express';
 import { AuthPayload } from './interfaces/auth-payload';
 import { AuthRequest } from './interfaces/auth-request';
+import { DrizzleService } from 'src/drizzle/drizzle.service';
+import { UsuarioTable } from 'src/drizzle/schema/usuario';
+import { eq } from 'drizzle-orm';
 
 @Injectable()
 export class AuthService {
+
+  private readonly db;
+
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly drizzleService: DrizzleService,
     private readonly emailService: EmailService,
     private readonly usuarioService: UsuarioService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) {
+    this.db = drizzleService.getDb();
+  }
 
   async obtenerInfoUsuario(id){
     const usuario = await this.usuarioService.findUniqueUsuario(id, true);
@@ -38,10 +45,8 @@ export class AuthService {
 
   async generateToken(data: AuthPayload) {
     try {
-
       const payload = data
       const token = await this.jwtService.signAsync(payload);
-
       return token;
     } catch (error) {
       throw new InternalServerErrorException(`Ocurrio un error al obtener el token: ${error}`);
@@ -170,11 +175,12 @@ export class AuthService {
 
   async solicitarRecuperacionPassword(emailDto: EmailDto) {
     try {
-      const usuario = await this.prisma.usuario.findUnique({
-        where: {
-          email: emailDto.email
-        }
-      });
+
+      const usuario = await this.db
+        .select()
+        .from(UsuarioTable)
+        .where(eq(UsuarioTable.email, emailDto.email))
+        .limit(1);
 
       if (!usuario) {
         throw new BadRequestException(
@@ -186,16 +192,14 @@ export class AuthService {
       const linkRecuperacion = `${envs.baseFrontendUrl}/${envs.resetPassPath}${tokenRecuperacionPassword}`;
 
       // Guardar el token y su fecha de expiración
-      await this.prisma.usuario.update({
-        where: {
-          email: emailDto.email,
-        },
-        data: {
+      await this.db
+        .update(UsuarioTable)
+        .set({
           token_verificacion_password: tokenRecuperacionPassword,
-          token_expiry_password: new Date(Date.now() + 86400000), // Expira en 24 horas
-        },
-      });
-
+          token_expiry_password: new Date(Date.now() + 86400000)
+        })
+        .where(eq(UsuarioTable.email, emailDto.email))
+        
       // Enviar correo con el enlace
       return await this.emailService.enviarRecuperadoPassword(
         emailDto.email,

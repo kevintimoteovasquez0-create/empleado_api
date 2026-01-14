@@ -8,6 +8,7 @@ import {
 import { ReniecService } from './reniec.service';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
 import { AccesoRequerido } from 'src/auth/decorators/acceso.decorator';
+import { NumeroDto } from './dto/numero.dto';
 
 @ApiTags('RENIEC')
 @ApiBearerAuth()
@@ -30,7 +31,7 @@ export class ReniecController {
     description: 'Número de documento (DNI de 8 dígitos)'
   })
   findDataUsuarioByDocument(
-    @Param('nrodocumento') numero: string
+    @Param('nrodocumento') numero: NumeroDto
   ) {
     return this.reniecService.findDataUsuarioByDocument(numero);
   }

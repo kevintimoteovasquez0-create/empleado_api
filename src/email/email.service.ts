@@ -12,7 +12,7 @@ import {
 } from '@getbrevo/brevo';
 import { envs } from 'src/config';
 
-// 🟢 IMPORTS DE DRIZZLE
+// Importes de Drizzle ORM
 import { DrizzleService } from '../drizzle/drizzle.service';
 import { UsuarioTable } from '../drizzle/schema/usuario';
 import { eq } from 'drizzle-orm';
@@ -20,16 +20,19 @@ import { eq } from 'drizzle-orm';
 @Injectable()
 export class EmailService {
   private emailAPI: TransactionalEmailsApi;
+  private readonly db; // Variable privada para la base de datos
 
   constructor(private readonly drizzleService: DrizzleService) {
+    this.db = this.drizzleService.getDb(); // Inicializamos la DB
+
     this.emailAPI = new TransactionalEmailsApi();
-    // Eliminamos el 'as any'. Como el tipo ya coincide, el linter se calmará.
     this.emailAPI.setApiKey(
       TransactionalEmailsApiApiKeys.apiKey,
       envs.brevoApiKey,
-    );
+    ); // Configuramos la API key de Brevo
   }
 
+  // Crear estructura de correo
   private createEmailData(
     to: string,
     subject: string,
@@ -43,9 +46,7 @@ export class EmailService {
     } as SendSmtpEmail;
   }
 
-  /* =========================
-     VERIFICACIÓN DE EMAIL
-     ========================= */
+  // Enviar correo de verificación de cuenta
   async sendVerificationEmail(email: string, verificationLink: string) {
     const subject = 'Verificación de correo electrónico';
     const htmlContent = `
@@ -69,7 +70,7 @@ export class EmailService {
                 </tr>
                 <tr>
                   <td style="padding: 50px 40px;">
-                    <h2 style="margin: 0 0 20px 0; color: #333333; font-size: 24px; font-weight: 600;">¡Hola! 👋</h2>
+                    <h2 style="margin: 0 0 20px 0; color: #333333; font-size: 24px; font-weight: 600;">Hola</h2>
                     <p style="margin: 0 0 25px 0; color: #555555; font-size: 16px; line-height: 1.6;">Gracias por registrarte. Para activar tu cuenta, verifica tu correo electrónico.</p>
                     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 35px 0;">
                       <tr>
@@ -105,9 +106,7 @@ export class EmailService {
     }
   }
 
-  /* =========================
-     ENVÍO DE CREDENCIALES
-     ========================= */
+  // Enviar credenciales de usuario
   async sendUsuarioCredentials(
     email: string,
     password: string,
@@ -136,15 +135,13 @@ export class EmailService {
     }
   }
 
-  /* =========================
-     AUTENTICACIÓN 2FA
-     ========================= */
+  // Enviar correo de autenticación de dos pasos
   async sendTwoFactorAuthenticateEmail(email: string, codigo: number) {
     const codigoString = codigo.toString();
     const subject = 'Autenticación de dos pasos';
     const htmlContent = `
       <div style="font-family: Calibri, sans-serif; width: 50%; margin: auto; padding: 40px 20px; border-radius: 10px; text-align: center; background-color: #f9f9f9;">
-        <p>Hola, este es tu autenticador de 2 pasos:</p>
+        <p>Hola, este es tu código de autenticación de 2 pasos:</p>
         <div style="display: flex; justify-content: center; gap: 10px; margin: 20px 0;">
           ${codigoString
             .split('')
@@ -154,7 +151,7 @@ export class EmailService {
             )
             .join('')}
         </div>
-        <p style="color: red; font-weight: bold;">⚠️ Válido por 5 minutos.</p>
+        <p style="color: red; font-weight: bold;">Válido por 5 minutos.</p>
         <p>Atentamente,<br><strong>Empresoft Perú</strong></p>
       </div>`;
 
@@ -170,36 +167,33 @@ export class EmailService {
     }
   }
 
-  /* =========================
-     VERIFICAR CUENTA (DB LOGIC)
-     ========================= */
+  // Verificar cuenta en la base de datos
   async verificarCuenta(token: string) {
     try {
-      const db = this.drizzleService.getDb();
-      const [usuario] = await db
+      const [usuario] = await this.db
         .select()
         .from(UsuarioTable)
-        .where(eq(UsuarioTable.tokenVerificacionEmail, token));
+        .where(eq(UsuarioTable.token_verificacion_email, token)); // Buscar usuario por token
 
-      if (!usuario || usuario.verificadoEmail) {
+      if (!usuario || usuario.verificado_email) {
         throw new BadRequestException('Usuario no encontrado o ya verificado.');
       }
 
       if (
-        !usuario.tokenExpiryEmail ||
-        new Date(usuario.tokenExpiryEmail) < new Date()
+        !usuario.token_expiry_email ||
+        new Date(usuario.token_expiry_email) < new Date()
       ) {
         throw new BadRequestException('El token ha expirado.');
       }
 
-      await db
+      await this.db
         .update(UsuarioTable)
         .set({
-          verificadoEmail: true,
-          tokenVerificacionEmail: null,
-          tokenExpiryEmail: null,
+          verificado_email: true,
+          token_verificacion_email: null,
+          token_expiry_email: null,
         })
-        .where(eq(UsuarioTable.id, usuario.id));
+        .where(eq(UsuarioTable.id, usuario.id)); // Actualizar estado de verificación
 
       return { message: 'Cuenta verificada exitosamente.' };
     } catch (error) {
@@ -210,9 +204,7 @@ export class EmailService {
     }
   }
 
-  /* =========================
-     RECUPERACIÓN DE PASSWORD
-     ========================= */
+  // Enviar correo de recuperación de contraseña
   async enviarRecuperadoPassword(email: string, recuperacionClaveLink: string) {
     const subject = 'Solicitud para recuperar contraseña';
     const htmlContent = `
@@ -242,36 +234,33 @@ export class EmailService {
     }
   }
 
-  /* =========================
-     RESTABLECER PASSWORD (DB LOGIC)
-     ========================= */
+  // Restablecer contraseña en la DB
   async restablecerPassword(token: string, passwordDto: PasswordDto) {
     try {
-      const db = this.drizzleService.getDb();
-      const [usuario] = await db
+      const [usuario] = await this.db
         .select()
         .from(UsuarioTable)
-        .where(eq(UsuarioTable.tokenVerificacionPassword, token));
+        .where(eq(UsuarioTable.token_verificacion_password, token)); // Buscar usuario por token de password
 
       if (!usuario) throw new BadRequestException('Token inválido.');
 
       if (
-        !usuario.tokenExpiryPassword ||
-        new Date(usuario.tokenExpiryPassword) < new Date()
+        !usuario.token_expiry_password ||
+        new Date(usuario.token_expiry_password) < new Date()
       ) {
         throw new BadRequestException('El token ha expirado.');
       }
 
-      const hashedPassword = await bcrypt.hash(passwordDto.password, 10);
+      const hashedPassword = await bcrypt.hash(passwordDto.password, 10); // Hashear contraseña
 
-      await db
+      await this.db
         .update(UsuarioTable)
         .set({
           password: hashedPassword,
-          tokenVerificacionPassword: null,
-          tokenExpiryPassword: null,
+          token_verificacion_password: null,
+          token_expiry_password: null,
         })
-        .where(eq(UsuarioTable.id, usuario.id));
+        .where(eq(UsuarioTable.id, usuario.id)); // Actualizar contraseña
 
       return { message: 'Contraseña actualizada con éxito.' };
     } catch (error) {

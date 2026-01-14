@@ -1,46 +1,56 @@
 import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { FotoService } from '../foto/foto.service';
 import { EmailService } from '../email/email.service';
-import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { FotoDto } from '../common/dto/foto.dto';
 import * as bcrypt from 'bcryptjs';
 import { addMinutes } from 'date-fns';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { PaginationUsuarioDto } from './dto/pagination-usuario.dto';
 import { envs } from '../config';
+import { DrizzleService } from 'src/drizzle/drizzle.service';
+import { UsuarioTable } from 'src/drizzle/schema/usuario';
+import { RolTable } from 'src/drizzle/schema/rol';
+import { EmpresaTable } from 'src/drizzle/schema/empresa';
+import { and, eq, ne, or, SQL } from 'drizzle-orm';
+import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 
 @Injectable()
 export class UsuarioService {
 
+  private readonly db;
+
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly drizzleService: DrizzleService,
     @Inject(forwardRef(() => FotoService)) private readonly fotoService: FotoService,
     private readonly emailService: EmailService
-  ) { }
+  ) { 
+    this.db = drizzleService.getDb();
+  }
 
   async findUniqueUsuario(id: number, estado: boolean){
     try {
-      const usuario = await this.prisma.usuario.findUnique({
-        include: {
+      const usuario = await this.db
+        .select({
+          ...UsuarioTable,
           rol: {
-            select: {
-              nombre: true
-            }
+            nombre: RolTable.nombre,
           },
           empresa: {
-            select: {
-              razon_social: true
-            }
+            razon_social: EmpresaTable.razon_social
           }
-        },
-        where: { 
-          id: id,
-          estado_registro: estado
-        }
-      });
+        })
+        .from(UsuarioTable)
+        .innerJoin(RolTable, eq(UsuarioTable.rol_id, RolTable.id))
+        .innerJoin(EmpresaTable, eq(UsuarioTable.empresa_id, EmpresaTable.id))
+        .where(
+          and(
+            eq(UsuarioTable.id, id),
+            eq(UsuarioTable.estado_registro, estado)
+          )
+        )
+        .limit(1)
 
       if(!usuario){
         throw new NotFoundException(`No se encontro el usuario con id ${id}`)
@@ -59,23 +69,23 @@ export class UsuarioService {
   async findOnebyEmail(email: string) {
 
     try {
-      const buscarUsuarioByEmail = await this.prisma.usuario.findUnique({
-        include: {
+
+      const buscarUsuarioByEmail = await this.db
+        .select({
+          ...UsuarioTable,
           rol: {
-            select: {
-              nombre: true
-            }
+            nombre: RolTable.nombre
           },
           empresa: {
-            select: {
-              razon_social: true
-            }
+            razon_social: EmpresaTable.razon_social
           }
-        },
-        where: {
-          email: email
-        },
-      })
+        })
+        .innerJoin(RolTable, eq(UsuarioTable.rol_id, RolTable.id))
+        .innerJoin(EmpresaTable, eq(UsuarioTable.empresa_id, EmpresaTable.id))
+        .where(
+          eq(UsuarioTable.email, email)
+        )
+        .limit(1)
 
       return {
         ...buscarUsuarioByEmail,
@@ -94,6 +104,9 @@ export class UsuarioService {
 
       const {page, limit, fechaInicio, fechaFin, rolId} = paginationUsuarioDto
 
+      const safeLimit = limit ?? 10;
+      const safePage = page ?? 1;
+
       const where: any = {}
 
       if(fechaInicio && fechaFin){
@@ -105,15 +118,14 @@ export class UsuarioService {
 
       if(rolId){
 
-        const rol = await this.prisma.rol.findUnique({
-          select: {
-            id: true,
-            nombre: true
-          },
-          where: {
-            id: rolId
-          }
-        })
+        const rol = await this.db
+          .select({
+            id: RolTable.id,
+            nombre: RolTable.nombre
+          })
+          .from(RolTable)
+          .where(eq(RolTable.id, rolId))
+          .limit(1);
 
         if(rol){
           where.rol_id = rol.id
@@ -123,16 +135,20 @@ export class UsuarioService {
 
       where.estado_registro = estado
 
-      const totalUsuario = await this.prisma.usuario.count({
-        where: where
-      })
-      const lastPage = Math.ceil(totalUsuario / limit)
+      const totalUsuario = await this.db
+        .select({ count: this.db.fn.count() })
+        .from(UsuarioTable)
+        .where(where)
+
+      const lastPage = Math.ceil(totalUsuario / safeLimit)
        
-      const usuario = await this.prisma.usuario.findMany({
-        where: where,
-        skip: (page - 1) * limit,
-        take: limit
-      })
+
+      const usuario = await this.db
+        .select()
+        .from(UsuarioTable)
+        .where(where)
+        .limit(limit)
+        .offset((safePage - 1) * safeLimit)
 
       return {
         data: usuario.map((user) => ({
@@ -141,7 +157,7 @@ export class UsuarioService {
         })),
         pagination: {
           totalUsuario: totalUsuario,
-          page: page,
+          page: safePage,
           lastPage: lastPage
         }
       }
@@ -154,23 +170,23 @@ export class UsuarioService {
 
   private async usuarioExistenteAlCrear(email: string, numero_documento: string, telefono: string){
 
-    const usuarioExistente = await this.prisma.usuario.findFirst({
-      where: {
-        OR: [
-          { email: email },
-          { numero_documento: numero_documento },
-          { telefono: telefono }
-        ]
-      },
-      select: {
-        email: true,
-        numero_documento: true,
-        telefono: true
-      }
-    });
+    const usuarioExistente = await this.db
+      .select({
+        email: UsuarioTable.email,
+        numero_documento: UsuarioTable.numero_documento,
+        telefono: UsuarioTable.telefono
+      })
+      .from(UsuarioTable)
+      .where(
+        or(
+          eq(UsuarioTable.email, email),
+          eq(UsuarioTable.numero_documento, numero_documento),
+          eq(UsuarioTable.telefono, telefono)
+        )
+      )
   
     if (usuarioExistente) {
-      const errores = [];
+      const errores: Record<string, string>[] = [];
       if (usuarioExistente.email === email) {
         errores.push({errorEmail: "El email ya está registrado."});
       }
@@ -185,26 +201,40 @@ export class UsuarioService {
 
   }
 
-  private async usuarioExistenteAlActualizar(id: number, email: string, numero_documento: string, telefono: string){
+  private async usuarioExistenteAlActualizar(id: number, email?: string, numero_documento?: string, telefono?: string){
 
-    const usuarioExistente = await this.prisma.usuario.findFirst({
-      where: {
-        id: { not: id },
-        OR: [
-          { email: email },
-          { numero_documento: numero_documento },
-          { telefono: telefono }
-        ]
-      },
-      select: {
-        email: true,
-        numero_documento: true,
-        telefono: true
-      }
-    });
+    const condiciones: SQL[] = [];
+
+    if (email) {
+      condiciones.push(eq(UsuarioTable.email, email));
+    }
+    if (numero_documento) {
+      condiciones.push(eq(UsuarioTable.numero_documento, numero_documento));
+    }
+    if (telefono) {
+      condiciones.push(eq(UsuarioTable.telefono, telefono));
+    }
+    
+    if (condiciones.length === 0) {
+      return;
+    }
+
+    const usuarioExistente = await this.db
+      .select({
+        email: UsuarioTable.email,
+        numero_documento: UsuarioTable.numero_documento,
+        telefono: UsuarioTable.telefono
+      })
+      .from(UsuarioTable)
+      .where(
+        and(
+          ne(UsuarioTable.id, id),
+          or(...condiciones)
+        )
+      )
   
     if (usuarioExistente) {
-      const errores = [];
+      const errores: Record<string, string>[] = [];
       if (usuarioExistente.email === email) {
         errores.push({errorEmail: "El email ya está registrado."});
       }
@@ -236,16 +266,18 @@ export class UsuarioService {
       
       await this.usuarioExistenteAlCrear(createUsuarioDto.email, createUsuarioDto.numero_documento, createUsuarioDto.telefono)
       
-      const createUsuario = await this.prisma.usuario.create({
-        data: {
+      const [createUsuario] = await this.db
+        .insert(UsuarioTable)
+        .values({
           ...usuarioData,
-          empresa: { connect: { id: empresaId } },
+          empresa_id: empresaId,
           password: hashedPassword,
-          ...(rol_id ? { rol: { connect: { id: rol_id } } } : {}), // Solo conecta si rol_id tiene valor
-          token_verificacion_email: verificationToken,  // Guardar el token de verificación
-          token_expiry_email: new Date(Date.now() + 86400000), // El token expira en 24 horas
-        }
-      });
+          rol_id: rol_id,
+          token_verificacion_email: verificationToken,
+          token_expiry_email: new Date(Date.now() + 86400000)
+        })
+        .returning()
+        
       const imagen_url = await this.fotoService.guardarImagen(createUsuario.id, 'usuario', fotoUsuario)
       //Registar foto de perfil
       await this.updateNombrefotoUsuario(createUsuario.id, { foto_url: imagen_url })
@@ -263,7 +295,6 @@ export class UsuarioService {
         }
       }
 
-
     } catch (error) {
       throw new InternalServerErrorException(`Tenemos problemas para crear el usuario: ${error}`);
     }
@@ -272,14 +303,17 @@ export class UsuarioService {
 
   async updateNombrefotoUsuario(id: number, fotoDto: FotoDto){
     try {
-      const foto = await this.prisma.usuario.update({
-        data: {
+
+      const [foto] = await this.db
+        .update(UsuarioTable)
+        .set({
           nombre_imagen: fotoDto.foto_url
-        },
-        where: {
-          id: id
-        }
-      })
+        })
+        .where(
+          eq(UsuarioTable.id, id)
+        )
+        .returning()
+
       return foto
     } catch (error) {
       throw new InternalServerErrorException(error)
@@ -290,25 +324,27 @@ export class UsuarioService {
 
     try {
 
+      const { email, numero_documento, telefono } = updateUsuarioDto
+
       const usuario = await this.findUniqueUsuario(id, true)
 
-      await this.usuarioExistenteAlActualizar(id, updateUsuarioDto.email, updateUsuarioDto.numero_documento, updateUsuarioDto.telefono)
+      await this.usuarioExistenteAlActualizar(id, email, numero_documento, telefono)
 
       const pathUrl = await this.fotoService.actualizarImagen(usuario.id, 'usuario', usuario.nombre_imagen, fotoUsuario)
 
       const { rol_id, ...usuarioData } = updateUsuarioDto;
-      
-      const updateUsuario = await this.prisma.usuario.update({
-        data: {
+
+      const updateUsuario = await this.db
+        .update(UsuarioTable)
+        .set({
           ...usuarioData,
           nombre_imagen: pathUrl,
-          empresa: { connect: { id: empresaId } },
-          rol: { connect: { id: rol_id } }, // Conectar con tabla rol
-        },
-        where: {
-          id: id
-        }
-      })
+          empresa_id: empresaId,
+          rol_id: rol_id, // Conectar con tabla rol
+        })
+        .where(
+          eq(UsuarioTable.id, id)
+        )
 
       return updateUsuario
 
@@ -327,14 +363,15 @@ export class UsuarioService {
       // Hashear la nueva contraseña
       const hashedPassword = await bcrypt.hash(updatePasswordDto.password, 10);
       
-      const updatePassword = await this.prisma.usuario.update({
-        data: {
+      const [updatePassword] = await this.db
+        .update(UsuarioTable)
+        .set({
           password: hashedPassword
-        },
-        where: {
-          id: usuarioId
-        }
-      })
+        })
+        .where(
+          eq(UsuarioTable.id, usuarioId)
+        )
+        .returning()
 
       return updatePassword
 
@@ -348,15 +385,15 @@ export class UsuarioService {
     try {
 
       await this.findUniqueUsuario(id, false)
-      
-      await this.prisma.usuario.update({
-        data: {
+
+      await this.db
+        .update(UsuarioTable)
+        .set({
           estado_registro: true
-        },
-        where: {
-          id: id
-        }
-      })
+        })
+        .where(
+          eq(UsuarioTable.id, id)
+        )
 
       return {
         message: `Se restauro el usuario con id ${id} de manera correcta`
@@ -372,14 +409,14 @@ export class UsuarioService {
 
       await this.findUniqueUsuario(id, true)
       
-      await this.prisma.usuario.update({
-        data: {
+      await this.db
+        .update(UsuarioTable)
+        .set({
           estado_registro: false
-        },
-        where: {
-          id: id
-        }
-      })
+        })
+        .where(
+          eq(UsuarioTable.id, id)
+        )
 
       return {
         message: `Se elimino el usuario con id ${id} de manera correcta`
@@ -398,13 +435,18 @@ export class UsuarioService {
 
       const tiempoAgregado: any = addMinutes(new Date(), 5);
       
-      await this.prisma.usuario.update({
-        where: { email: email, estado_registro: true },
-        data: {
+      await this.db
+        .update(UsuarioTable)
+        .set({
           two_factor_code: codigo,
           two_factor_expired: tiempoAgregado
-        }
-      });
+        })
+        .where(
+          and(
+            eq(UsuarioTable.email, email),
+            eq(UsuarioTable.estado_registro, true)
+          )
+        )
       
       return await this.emailService.sendTwoFactorAuthenticateEmail(email, codigo);  
     } catch (error) {

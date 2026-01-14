@@ -4,7 +4,7 @@ import { CreateEmpresaDto } from './dto/create-empresa.dto';
 import { UpdateEmpresaDto } from './dto/update-empresa.dto';
 import { DrizzleService } from 'src/drizzle/drizzle.service';
 import { EmpresaTable } from 'src/drizzle/schema/empresa';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 @Injectable()
 export class EmpresaService {
@@ -20,19 +20,22 @@ export class EmpresaService {
         try {
             const { page, limit } = paginationDto
 
+            const safeLimit = limit ?? 10;
+            const safePage = page ?? 1;
+
             const totalEmpresa = await this.db
                 .select({ count: this.db.fn.count() })
                 .from(EmpresaTable)
-                .where(eq(EmpresaTable.estadoRegistro, true));
+                .where(eq(EmpresaTable.estado_registro, true));
 
-            const lastPage = Math.ceil(totalEmpresa / limit)
+            const lastPage = Math.ceil(totalEmpresa / safeLimit)
 
             const response = await this.db
                 .select()
                 .from(EmpresaTable)
-                .where(eq(EmpresaTable.estadoRegistro, estado))
+                .where(eq(EmpresaTable.estado_registro, estado))
                 .limit(limit)
-                .offset((page - 1) * limit);
+                .offset((safePage - 1) * safeLimit);
 
             return {
                 data: response,
@@ -51,12 +54,16 @@ export class EmpresaService {
     
     async findOneEmpresa(id: number, estado: boolean){
         try {
-           
+
             const response = await this.db
                 .select()
                 .from(EmpresaTable)
-                .where(eq(EmpresaTable.id, id))
-                .where(eq(EmpresaTable.estadoRegistro, estado))
+                .where(
+                    and(
+                        eq(EmpresaTable.id, id),
+                        eq(EmpresaTable.estado_registro, estado)
+                    )
+                )
                 .limit(1);
 
             if(!response){
