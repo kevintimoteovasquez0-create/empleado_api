@@ -25,15 +25,16 @@ import { eq } from 'drizzle-orm';
 @Injectable()
 export class AuthService {
 
-  private readonly db;
-
   constructor(
     private readonly drizzleService: DrizzleService,
     private readonly emailService: EmailService,
     private readonly usuarioService: UsuarioService,
     private readonly jwtService: JwtService,
   ) {
-    this.db = drizzleService.getDb();
+  }
+
+  private get db(){
+    return this.drizzleService.getDb()
   }
 
   async obtenerInfoUsuario(id){
@@ -129,6 +130,9 @@ export class AuthService {
   async verifyTwoFactorAuth(twoFactorDto: TwoFactorAuth, res: Response) {
     try {
       const usuario = await this.usuarioService.findOnebyEmail(twoFactorDto.email);
+      if (!usuario.two_factor_expired) {
+        throw new BadRequestException('No hay un código de verificación activo.');
+      }
       const now = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
       const tiempoLimite = format(usuario.two_factor_expired, 'yyyy-MM-dd HH:mm:ss')
 

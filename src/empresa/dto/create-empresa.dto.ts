@@ -11,7 +11,7 @@ export class CreateEmpresaDto {
   })
   @IsString()
   @MaxLength(50, { message: 'La razon social no puede tener mas de 50 caracteres' })
-  razonSocial: string;
+  razon_social: string;
 
   @ApiProperty({
     example: '20123456789',

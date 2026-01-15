@@ -22,6 +22,14 @@ export class CreateRolDto {
   @IsNotEmpty({ message: 'El nombre del rol es requerido.' })
   nombre: string;
 
+   @ApiProperty({
+    description: 'descripcion del rol',
+    example: 'Este rol es para ingresar a todos los modulos del sistema'
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Descripcion del rol es requerido.' })
+  descripcion: string;
+
   @ApiProperty({
     description: 'Lista de accesos asociados al rol',
     type: [AccesoDto]

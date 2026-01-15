@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { RolService } from './rol.service';
 import { RolController } from './rol.controller';
-import { PrismaModule } from 'src/prisma/prisma.module';
+import { DrizzleModule } from 'src/drizzle/drizzle.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [DrizzleModule],
   controllers: [RolController],
   providers: [RolService],
 })

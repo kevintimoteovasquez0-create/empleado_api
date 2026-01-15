@@ -4,12 +4,12 @@ import { AccesoTable } from 'src/drizzle/schema/acceso';
 
 @Injectable()
 export class AccesoService {
-  private readonly db;
 
-  constructor(private readonly drizzleService: DrizzleService) {
-    this.db = drizzleService.getDb(); 
+  constructor(private readonly drizzleService: DrizzleService) {}
+
+  private get db(){
+    return this.drizzleService.getDb()
   }
-
 
   async findAllAccesos() {
     try {

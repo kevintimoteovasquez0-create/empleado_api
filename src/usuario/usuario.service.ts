@@ -15,25 +15,27 @@ import { RolTable } from 'src/drizzle/schema/rol';
 import { EmpresaTable } from 'src/drizzle/schema/empresa';
 import { and, eq, ne, or, SQL } from 'drizzle-orm';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
+import { getTableColumns } from 'drizzle-orm';
+import { count } from 'drizzle-orm';
 
 @Injectable()
 export class UsuarioService {
-
-  private readonly db;
 
   constructor(
     private readonly drizzleService: DrizzleService,
     @Inject(forwardRef(() => FotoService)) private readonly fotoService: FotoService,
     private readonly emailService: EmailService
-  ) { 
-    this.db = drizzleService.getDb();
+  ) { }
+
+  private get db(){
+    return this.drizzleService.getDb()
   }
 
   async findUniqueUsuario(id: number, estado: boolean){
     try {
-      const usuario = await this.db
+      const [usuario] = await this.db
         .select({
-          ...UsuarioTable,
+          ...getTableColumns(UsuarioTable),
           rol: {
             nombre: RolTable.nombre,
           },
@@ -58,7 +60,9 @@ export class UsuarioService {
 
       return {
         ...usuario,
-        imagen_url: this.fotoService.obtenerUrlCompleta('usuario', usuario.id, usuario.nombre_imagen)
+        imagen_url: usuario.nombre_imagen 
+        ? this.fotoService.obtenerUrlCompleta('usuario', usuario.id, usuario.nombre_imagen)
+        : null
       };
 
     } catch (error) {
@@ -70,9 +74,9 @@ export class UsuarioService {
 
     try {
 
-      const buscarUsuarioByEmail = await this.db
+      const [buscarUsuarioByEmail] = await this.db
         .select({
-          ...UsuarioTable,
+          ...getTableColumns(UsuarioTable),
           rol: {
             nombre: RolTable.nombre
           },
@@ -80,6 +84,7 @@ export class UsuarioService {
             razon_social: EmpresaTable.razon_social
           }
         })
+        .from(UsuarioTable)
         .innerJoin(RolTable, eq(UsuarioTable.rol_id, RolTable.id))
         .innerJoin(EmpresaTable, eq(UsuarioTable.empresa_id, EmpresaTable.id))
         .where(
@@ -89,7 +94,9 @@ export class UsuarioService {
 
       return {
         ...buscarUsuarioByEmail,
-        imagen_url: this.fotoService.obtenerUrlCompleta('usuario', buscarUsuarioByEmail.id, buscarUsuarioByEmail.nombre_imagen)
+        imagen_url: buscarUsuarioByEmail.nombre_imagen
+        ? this.fotoService.obtenerUrlCompleta('usuario', buscarUsuarioByEmail.id, buscarUsuarioByEmail.nombre_imagen)
+        : null
       };
 
     } catch (error) {
@@ -118,7 +125,7 @@ export class UsuarioService {
 
       if(rolId){
 
-        const rol = await this.db
+        const [rol] = await this.db
           .select({
             id: RolTable.id,
             nombre: RolTable.nombre
@@ -135,10 +142,12 @@ export class UsuarioService {
 
       where.estado_registro = estado
 
-      const totalUsuario = await this.db
-        .select({ count: this.db.fn.count() })
+      const [{value}] = await this.db
+        .select({ value: count(UsuarioTable.id) })
         .from(UsuarioTable)
         .where(where)
+
+      const totalUsuario = Number(value)
 
       const lastPage = Math.ceil(totalUsuario / safeLimit)
        
@@ -147,20 +156,22 @@ export class UsuarioService {
         .select()
         .from(UsuarioTable)
         .where(where)
-        .limit(limit)
+        .limit(safeLimit)
         .offset((safePage - 1) * safeLimit)
 
       return {
         data: usuario.map((user) => ({
           ...user,
-          imagen_url: this.fotoService.obtenerUrlCompleta('usuario', user.id, user.nombre_imagen)
+          imagen_url: user.nombre_imagen 
+          ? this.fotoService.obtenerUrlCompleta('usuario', user.id, user.nombre_imagen)
+          : null
         })),
         pagination: {
           totalUsuario: totalUsuario,
           page: safePage,
           lastPage: lastPage
         }
-      }
+      };
 
     } catch (error) {
       throw new InternalServerErrorException(error)
@@ -170,7 +181,7 @@ export class UsuarioService {
 
   private async usuarioExistenteAlCrear(email: string, numero_documento: string, telefono: string){
 
-    const usuarioExistente = await this.db
+    const [usuarioExistente] = await this.db
       .select({
         email: UsuarioTable.email,
         numero_documento: UsuarioTable.numero_documento,
@@ -219,7 +230,7 @@ export class UsuarioService {
       return;
     }
 
-    const usuarioExistente = await this.db
+    const [usuarioExistente] = await this.db
       .select({
         email: UsuarioTable.email,
         numero_documento: UsuarioTable.numero_documento,
@@ -261,22 +272,37 @@ export class UsuarioService {
       const hashedPassword = await bcrypt.hash(createUsuarioDto.numero_documento, 10);
 
       const nombreCompleto = `${createUsuarioDto.nombre} ${createUsuarioDto.apellido}`
-
-      const { rol_id, ...usuarioData } = createUsuarioDto;
       
       await this.usuarioExistenteAlCrear(createUsuarioDto.email, createUsuarioDto.numero_documento, createUsuarioDto.telefono)
       
       const [createUsuario] = await this.db
         .insert(UsuarioTable)
         .values({
-          ...usuarioData,
+          // Datos básicos
           empresa_id: empresaId,
+          rol_id: createUsuarioDto.rol_id,
+          nombre: createUsuarioDto.nombre,
+          apellido: createUsuarioDto.apellido,
+          tipo_documento: createUsuarioDto.tipo_documento,
+          numero_documento: createUsuarioDto.numero_documento,
+          // Fechas convertidas a string
+          fecha_nacimiento: createUsuarioDto.fecha_nacimiento.toISOString().split('T')[0],
+          fecha_ingreso: createUsuarioDto.fecha_ingreso.toISOString().split('T')[0],
+          // Ubicación
+          direccion: createUsuarioDto.direccion,
+          pais: createUsuarioDto.pais,
+          departamento: createUsuarioDto.departamento,
+          provincia: createUsuarioDto.provincia,
+          distrito: createUsuarioDto.distrito,
+          // Contacto
+          telefono: createUsuarioDto.telefono,
+          email: createUsuarioDto.email,   
+          // Autenticación
           password: hashedPassword,
-          rol_id: rol_id,
           token_verificacion_email: verificationToken,
-          token_expiry_email: new Date(Date.now() + 86400000)
+          token_expiry_email: new Date(Date.now() + 86400000),
         })
-        .returning()
+        .returning();
         
       const imagen_url = await this.fotoService.guardarImagen(createUsuario.id, 'usuario', fotoUsuario)
       //Registar foto de perfil
@@ -332,19 +358,38 @@ export class UsuarioService {
 
       const pathUrl = await this.fotoService.actualizarImagen(usuario.id, 'usuario', usuario.nombre_imagen, fotoUsuario)
 
-      const { rol_id, ...usuarioData } = updateUsuarioDto;
-
-      const updateUsuario = await this.db
+      const [updateUsuario] = await this.db
         .update(UsuarioTable)
         .set({
-          ...usuarioData,
-          nombre_imagen: pathUrl,
+          // Datos básicos (solo los que vienen en updateUsuarioDto)
+          nombre: updateUsuarioDto.nombre,
+          apellido: updateUsuarioDto.apellido,
+          tipo_documento: updateUsuarioDto.tipo_documento,
+          numero_documento: updateUsuarioDto.numero_documento,
+          // Fechas convertidas a string (si existen en el DTO)
+          fecha_nacimiento: updateUsuarioDto.fecha_nacimiento 
+            ? updateUsuarioDto.fecha_nacimiento.toISOString().split('T')[0] 
+            : undefined,
+          fecha_ingreso: updateUsuarioDto.fecha_ingreso 
+            ? updateUsuarioDto.fecha_ingreso.toISOString().split('T')[0] 
+            : undefined,
+          // Ubicación
+          direccion: updateUsuarioDto.direccion,
+          pais: updateUsuarioDto.pais,
+          departamento: updateUsuarioDto.departamento,
+          provincia: updateUsuarioDto.provincia,
+          distrito: updateUsuarioDto.distrito,
+          // Contacto
+          telefono: updateUsuarioDto.telefono,
+          email: updateUsuarioDto.email,
+          // Relaciones
           empresa_id: empresaId,
-          rol_id: rol_id, // Conectar con tabla rol
+          rol_id: updateUsuarioDto.rol_id,
+          // Imagen
+          nombre_imagen: pathUrl,
         })
-        .where(
-          eq(UsuarioTable.id, id)
-        )
+        .where(eq(UsuarioTable.id, id))
+        .returning();
 
       return updateUsuario
 

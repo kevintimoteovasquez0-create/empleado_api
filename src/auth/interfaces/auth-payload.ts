@@ -5,5 +5,5 @@ export interface AuthPayload {
   rol_nombre: string;
   empresa_id: number;
   empresa_nombre: string;
-  foto_usuario: string;
+  foto_usuario: string | null;
 }

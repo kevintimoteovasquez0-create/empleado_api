@@ -7,18 +7,29 @@ import { envs } from '../config';
 export class DrizzleService implements OnModuleInit, OnModuleDestroy {
   private pool: Pool;
   private db: NodePgDatabase;
+  private initializationPromise: Promise<void>;
 
-  async onModuleInit() {
+  constructor() {
+    // Inicia la conexión inmediatamente pero de forma controlada
+    this.initializationPromise = this.initialize();
+  }
+
+  private async initialize() {
     console.log('Conectando a la base de datos...');
 
     this.pool = new Pool({
       connectionString: envs.dataBaseUrl,
       max: 30,
-      idleTimeoutMillis: 60000, //1 minuto
-      connectionTimeoutMillis: 5000, //5 segundos
+      idleTimeoutMillis: 60000,
+      connectionTimeoutMillis: 5000,
     });
 
     this.db = drizzle({ client: this.pool });
+    console.log('Base de datos conectada exitosamente');
+  }
+
+  async onModuleInit() {
+    await this.initializationPromise;
   }
 
   getDb(): NodePgDatabase {
