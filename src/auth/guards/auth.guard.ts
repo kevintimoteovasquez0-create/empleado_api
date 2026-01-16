@@ -19,38 +19,43 @@ import { AccesoTable } from 'src/drizzle/schema/acceso';
 @Injectable()
 export class AuthGuard implements CanActivate {
 
-  private readonly db;
-
   constructor(
     private readonly jwtService: JwtService,
-    private readonly drizzleService: DrizzleService, // 🔹 Consultar accesos en la BD
+    private readonly drizzleService: DrizzleService,
     private readonly reflector: Reflector,  
-  ) {
-    this.db = drizzleService.getDb();
+  ) {}
+
+  private get db(){
+    return this.drizzleService.getDb();
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse<Response>();
-    const token = this.extractTokenFromCookie(request); // 🔥 Ahora extrae el token desde la cookie
+    const token = this.extractTokenFromCookie(request);
 
     if (!token) {
       throw new UnauthorizedException('No autenticado');
     }
 
     try {
-      // 🔹 Validar y decodificar el token
+      // Validar y decodificar el token
       const payload = await this.jwtService.verifyAsync(token, {
         secret: jwtConstants.secret,
       });
 
+      // Validar que no sea un token temporal (para 2FA)
+      if (payload.pendingTwoFactor) {
+        throw new UnauthorizedException('Debes completar la verificación 2FA primero');
+      }
+
       request["user"] = payload; // Guardar usuario en la request
 
-      // 🔹 Obtener accesos requeridos desde @AccesoRequerido()
+      // Obtener accesos requeridos desde @AccesoRequerido()
       const requiredAccesses = this.reflector.get<string[]>(ACCESO_KEY, context.getHandler());
 
       if (requiredAccesses) {
-        // 🔹 Consultar accesos del usuario en la BD según su rol
+        // Consultar accesos del usuario en la BD según su rol
 
         const userAccesses = await this.db
           .select({
@@ -90,7 +95,7 @@ export class AuthGuard implements CanActivate {
   }
 
   private extractTokenFromCookie(request: Request): string | undefined {
-    return request.cookies?.jwt; // 🔥 Extraer el token desde la cookie
+    return request.cookies?.jwt;
   }
 
   private hasRequiredAccess(userAccesses: string[], requiredAccesses: string[]): boolean {

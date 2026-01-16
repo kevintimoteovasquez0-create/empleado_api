@@ -3,11 +3,14 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { EmailDto } from 'src/email/dto/email.dto';
-import { TwoFactorAuth } from './dto/two_factor_auth.dto';
-import { NewTwoFactorCode } from './dto/new_two_facto_code.dto';
 import type { Response } from 'express';
 import { AuthGuard } from './guards/auth.guard';
 import type { AuthRequest } from './interfaces/auth-request';
+import { VerifyTwoFactorDto } from './dto/verify_two_factor.dto';
+import { VerifyRecoveryCodeDto } from './dto/verify_recovery_code.dto';
+import { ConfirmTwoFactorDto } from './dto/confirm_two_factor.dto';
+import { DisableTwoFactorDto } from './dto/disable_two_factor.dto';
+import { RegenerateRecoveryCodesDto } from './dto/regenerate_recovery_codes.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -52,28 +55,78 @@ export class AuthController {
     return this.authService.solicitarRecuperacionPassword(emailDto)
   }
 
-  @Post('/two-factor/verify')
-  @ApiOperation({
-    summary: 'Verificar código de doble factor',
-    description: 'Verifica el código de autenticación de dos factores',
-  })
-  @ApiResponse({ status: 200, description: 'Código 2FA verificado correctamente' })
-  @ApiResponse({ status: 401, description: 'Código inválido o expirado' })
-  verifyTwoFactor(@Body() twoFactorDto: TwoFactorAuth, @Res() res: Response) {
-    return this.authService.verifyTwoFactorAuth(twoFactorDto, res);
+  //2FA
+  @Post('2fa/verify')
+  @HttpCode(200)
+  async verify2FA(
+    @Body() verifyTwoFactorDto: VerifyTwoFactorDto,
+    @Res() res: Response,
+  ) {
+    return this.authService.verifyTwoFactorTotp(verifyTwoFactorDto, res);
   }
 
-  @Post('/two-factor/code')
+  @Post('2fa/verify-recovery')
+  @HttpCode(200)
   @ApiOperation({
-    summary: 'Generar nuevo código 2FA',
-    description: 'Genera y envía un nuevo código de autenticación de dos factores',
+    summary: 'Verificar código de recuperación',
+    description: 'Inicia sesión usando un código de recuperación cuando no tienes acceso a tu aplicación de autenticación',
   })
-  @ApiResponse({ status: 200, description: 'Nuevo código 2FA enviado' })
-  newCodeTwoFactor(@Body() twoFactorDto: NewTwoFactorCode) {
-    return this.authService.newTwoFactorCodeAgain(twoFactorDto.email);
+  @ApiResponse({ status: 200, description: 'Código de recuperación válido, inicio de sesión completo' })
+  @ApiResponse({ status: 401, description: 'Código de recuperación inválido o ya usado' })
+  async verifyRecoveryCode(
+    @Body() verifyRecoveryCodeDto: VerifyRecoveryCodeDto,
+    @Res() res: Response,
+  ) {
+    return this.authService.verifyRecoveryCode(verifyRecoveryCodeDto, res);
+  }
+
+  @Post('2fa/enable')
+  @UseGuards(AuthGuard)
+  @HttpCode(200)
+  async enable2FA(@Req() req: AuthRequest) {
+    return this.authService.enable2FA(req.user.id);
+  }
+
+  @Post('2fa/confirm')
+  @UseGuards(AuthGuard)
+  @HttpCode(200)
+  async confirm2FA(
+    @Req() req: AuthRequest,
+    @Body() confirmTwoFactorDto: ConfirmTwoFactorDto,
+  ) {
+    return this.authService.confirm2FA(req.user.id, confirmTwoFactorDto);
+  }
+
+  @Post('2fa/regenerate-codes')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Regenerar códigos de recuperación',
+    description: 'Genera nuevos códigos de recuperación. Los anteriores quedan invalidados. Requiere código TOTP actual.',
+  })
+  @ApiResponse({ status: 200, description: 'Códigos regenerados exitosamente' })
+  @ApiResponse({ status: 400, description: '2FA no está habilitado' })
+  @ApiResponse({ status: 401, description: 'Código inválido' })
+  async regenerateRecoveryCodes(
+    @Req() req: AuthRequest,
+    @Body() regenerateRecoveryCodesDto: RegenerateRecoveryCodesDto,
+  ) {
+    return this.authService.regenerateRecoveryCodes(req.user.id, regenerateRecoveryCodesDto);
+  }
+
+  @Post('2fa/disable')
+  @UseGuards(AuthGuard)
+  @HttpCode(200)
+  async disable2FA(
+    @Req() req: AuthRequest,
+    @Body() disableTwoFactorDto: DisableTwoFactorDto,
+  ) {
+    return this.authService.disable2FA(req.user.id, disableTwoFactorDto);
   }
 
   @Post('/logout')
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Cerrar sesión',

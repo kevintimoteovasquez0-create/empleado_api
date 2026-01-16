@@ -102,7 +102,7 @@ export class FotoService {
     }
   }  
 
-  async actualizarImagen(id: number, entidad: string, nombre_imagen: string, archivo?: Express.Multer.File): Promise<string>{
+  async actualizarImagen(id: number, entidad: string, nombre_imagen: string | null, archivo?: Express.Multer.File): Promise<string | null> {
     
     if(!archivo){
       return nombre_imagen

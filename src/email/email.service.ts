@@ -10,17 +10,18 @@ import { eq } from 'drizzle-orm';
 @Injectable()
 export class EmailService {
   private emailAPI: TransactionalEmailsApi;
-  private readonly db;
 
   constructor(private readonly drizzleService: DrizzleService) {
-    this.db = drizzleService.getDb();
-    
     // Inicializar Brevo
     this.emailAPI = new TransactionalEmailsApi();
     this.emailAPI.setApiKey(
       TransactionalEmailsApiApiKeys.apiKey,
       envs.brevoApiKey
     );
+  }
+
+  private get db(){
+    return this.drizzleService.getDb()
   }
 
   private createEmailData(to: string, subject: string, htmlContent: string): SendSmtpEmail {
@@ -316,7 +317,7 @@ export class EmailService {
 
   async verificarCuenta(token: string) {
     try {
-      const usuarioEncontrado = await this.db
+      const [usuarioEncontrado] = await this.db
         .select()
         .from(UsuarioTable)
         .where(eq(UsuarioTable.token_verificacion_email, token))
@@ -324,6 +325,10 @@ export class EmailService {
 
       if (!usuarioEncontrado || usuarioEncontrado.verificado_email === true) {
         throw new BadRequestException('Usuario no encontrado o ya verificado.');
+      }
+
+      if (!usuarioEncontrado.token_expiry_email) {
+        throw new BadRequestException('Token de verificación inválido.');
       }
 
       if (usuarioEncontrado.token_expiry_email < new Date()) {
@@ -532,7 +537,7 @@ export class EmailService {
 
   async restablecerPassword(token: string, passwordDto: PasswordDto) {
     try {
-      const usuarioEncontrado = await this.db
+      const [usuarioEncontrado] = await this.db
         .select()
         .from(UsuarioTable)
         .where(eq(UsuarioTable.token_verificacion_password, token))

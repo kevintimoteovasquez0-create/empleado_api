@@ -4,15 +4,15 @@ import { CreateEmpresaDto } from './dto/create-empresa.dto';
 import { UpdateEmpresaDto } from './dto/update-empresa.dto';
 import { DrizzleService } from 'src/drizzle/drizzle.service';
 import { EmpresaTable } from 'src/drizzle/schema/empresa';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, count } from 'drizzle-orm';
 
 @Injectable()
 export class EmpresaService {
 
-    private readonly db;
+    constructor(private readonly drizzleService: DrizzleService){}
 
-    constructor(private readonly drizzleService: DrizzleService){
-        this.db = drizzleService.getDb();
+    private get db() {
+        return this.drizzleService.getDb();
     }
     
     async findAllEmpresa(paginationDto: PaginationDto, estado: boolean){
@@ -23,18 +23,20 @@ export class EmpresaService {
             const safeLimit = limit ?? 10;
             const safePage = page ?? 1;
 
-            const totalEmpresa = await this.db
-                .select({ count: this.db.fn.count() })
+            const [{value}] = await this.db
+                .select( {value: count(EmpresaTable.id)} )
                 .from(EmpresaTable)
                 .where(eq(EmpresaTable.estado_registro, true));
 
+            const totalEmpresa = Number(value)
+
             const lastPage = Math.ceil(totalEmpresa / safeLimit)
 
-            const response = await this.db
+            const [response] = await this.db
                 .select()
                 .from(EmpresaTable)
                 .where(eq(EmpresaTable.estado_registro, estado))
-                .limit(limit)
+                .limit(safeLimit)
                 .offset((safePage - 1) * safeLimit);
 
             return {
@@ -55,7 +57,7 @@ export class EmpresaService {
     async findOneEmpresa(id: number, estado: boolean){
         try {
 
-            const response = await this.db
+            const [response] = await this.db
                 .select()
                 .from(EmpresaTable)
                 .where(
@@ -125,8 +127,8 @@ export class EmpresaService {
             await this.db
                 .update(EmpresaTable)
                 .set({ 
-                    estadoRegistro: false,
-                    updatedAt: new Date()
+                    estado_registro: false,
+                    updated_at: new Date()
                 })
                 .where(eq(EmpresaTable.id, id))
 
@@ -147,7 +149,7 @@ export class EmpresaService {
 
             await this.db
                 .update(EmpresaTable)
-                .set({ estadoRegistro: true })
+                .set({ estado_registro: true })
                 .where(eq(EmpresaTable.id, id))
 
             return {

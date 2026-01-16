@@ -15,6 +15,7 @@ interface EnvVars {
   // Emails
   BREVO_API_KEY: string;
   EMAIL_EMPRESA: string;
+  APP_NAME: string;
 }
 
 const envsSchema = Joi.object({
@@ -31,6 +32,7 @@ const envsSchema = Joi.object({
   //Emails
   BREVO_API_KEY: Joi.string().required(),
   EMAIL_EMPRESA: Joi.string().required(),
+  APP_NAME: Joi.string().required(),
 }).unknown(true);
 
 const validacion = envsSchema.validate(process.env);
@@ -55,4 +57,5 @@ export const envs = {
   //Emails
   brevoApiKey: envVars.BREVO_API_KEY,
   emailEmpresa: envVars.EMAIL_EMPRESA,
+  appName: envVars.APP_NAME
 };

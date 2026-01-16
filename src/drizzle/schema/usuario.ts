@@ -1,4 +1,4 @@
-import { pgTable, integer, varchar, boolean, date, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, integer, varchar, boolean, date, timestamp, pgEnum, text } from "drizzle-orm/pg-core";
 import { EmpresaTable } from "./empresa";
 import { RolTable } from "./rol";
 
@@ -17,7 +17,7 @@ export const UsuarioTable = pgTable('usuario', {
     .notNull(),
   nombre: varchar('nombre', { length: 50 }).notNull(),
   apellido: varchar('apellido', { length: 50 }).notNull(),
-  tipo_documento: TipoDocumentoUsuario('tipo_documento').notNull(),
+  tipo_documento: varchar('tipo_documento', { length: 20 }).notNull(),
   numero_documento: varchar('numero_documento', { length: 20 }).notNull().unique(),
   fecha_nacimiento: date('fecha_nacimiento'),
   fecha_ingreso: date('fecha_ingreso'),
@@ -36,9 +36,18 @@ export const UsuarioTable = pgTable('usuario', {
   token_expiry_email: timestamp('token_expiry_email'),
   token_verificacion_password: varchar('token_verificacion_password', { length: 255 }),
   token_expiry_password: timestamp('token_expiry_password'),
+  
+  // Campos para 2FA con TOTP (Google Authenticator)
   auth_two_factor: boolean('auth_two_factor').default(false).notNull(),
+  two_factor_secret: varchar('two_factor_secret', { length: 255 }),
+
+  // Códigos de recuperación para 2FA
+  recovery_codes: text('recovery_codes'),
+  
+  // Opcional: para 2FA por SMS/Email
   two_factor_code: integer('two_factor_code'),
   two_factor_expired: timestamp('two_factor_expired'),
+  
   estado_registro: boolean('estado_registro').default(true).notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at')
