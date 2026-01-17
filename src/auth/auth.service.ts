@@ -44,6 +44,16 @@ export class AuthService {
     return this.drizzleService.getDb()
   }
 
+  private setCookieJWT(res: Response, token: string): void {
+    res.cookie('jwt', token, {
+      httpOnly: true, // Protege contra XSS
+      secure: process.env.NODE_ENV === 'production', // HTTPS en producción
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // CSRF protection
+      maxAge: 24 * 60 * 60 * 1000, // 1 día
+      path: '/',
+    });
+  }
+
   // Genera códigos de recuperación únicos (8 caracteres hexadecimales)
   private generateRecoveryCodes(count: number = 10): string[] {
     const codes: string[] = [];
@@ -127,12 +137,7 @@ export class AuthService {
       const token = await this.generateToken(data);
 
       // Establecer el token en una cookie segura
-      res.cookie('jwt', token, {
-        httpOnly: true, // Protege contra XSS
-        /* secure: false,
-        sameSite: 'lax', */ // Protege contra CSRF
-        maxAge: 24 * 60 * 60 * 1000, // 1 día
-      });
+      this.setCookieJWT(res, token);
 
       return res.send({ 
         message: 'Inicio de sesión exitoso',
@@ -197,10 +202,8 @@ export class AuthService {
       
       const token = await this.generateToken(data);
 
-      res.cookie('jwt', token, {
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000,
-      });
+      // Establecer el token en una cookie segura
+      this.setCookieJWT(res, token);
 
       return res.send({ 
         message: 'Inicio de sesion exitoso',
@@ -280,10 +283,8 @@ export class AuthService {
       
       const token = await this.generateToken(data);
 
-      res.cookie('jwt', token, {
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000,
-      });
+      // Establecer el token en una cookie segura
+      this.setCookieJWT(res, token);
 
       return res.send({ 
         message: 'Inicio de sesión exitoso con código de recuperación',
@@ -347,7 +348,7 @@ export class AuthService {
 
       const { codigo } = confirmTwoFactorDto;
 
-      const usuario = await this.usuarioService.findUniqueUsuario(usuarioId, false);
+      const usuario = await this.usuarioService.findUniqueUsuario(usuarioId, true);
 
       if (!usuario) {
         throw new NotFoundException('Usuario no encontrado');
@@ -406,7 +407,7 @@ export class AuthService {
 
       const { codigo } = regenerateRecoveryCodesDto;
 
-      const usuario = await this.usuarioService.findUniqueUsuario(usuarioId, false);
+      const usuario = await this.usuarioService.findUniqueUsuario(usuarioId, true);
 
       if (!usuario) {
         throw new NotFoundException('Usuario no encontrado');
@@ -460,7 +461,7 @@ export class AuthService {
 
       const { codigo } = disableTwoFactorDto;
 
-      const usuario = await this.usuarioService.findUniqueUsuario(usuarioId, false);
+      const usuario = await this.usuarioService.findUniqueUsuario(usuarioId, true);
 
       if (!usuario) {
         throw new NotFoundException('Usuario no encontrado');

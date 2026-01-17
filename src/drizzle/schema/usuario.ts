@@ -44,10 +44,6 @@ export const UsuarioTable = pgTable('usuario', {
   // Códigos de recuperación para 2FA
   recovery_codes: text('recovery_codes'),
   
-  // Opcional: para 2FA por SMS/Email
-  two_factor_code: integer('two_factor_code'),
-  two_factor_expired: timestamp('two_factor_expired'),
-  
   estado_registro: boolean('estado_registro').default(true).notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at')

@@ -472,31 +472,4 @@ export class UsuarioService {
     }
   }
 
-  async newTwoFactorCode(email: string) {
-
-    try {
-
-      const codigo: number = Math.floor(1000 + Math.random() * 9000);
-
-      const tiempoAgregado: any = addMinutes(new Date(), 5);
-      
-      await this.db
-        .update(UsuarioTable)
-        .set({
-          two_factor_code: codigo,
-          two_factor_expired: tiempoAgregado
-        })
-        .where(
-          and(
-            eq(UsuarioTable.email, email),
-            eq(UsuarioTable.estado_registro, true)
-          )
-        )
-      
-      return await this.emailService.sendTwoFactorAuthenticateEmail(email, codigo);  
-    } catch (error) {
-      throw new InternalServerErrorException(`Ocurrio un error al habilitar : ${error}`)
-    }
-  }
-
 }

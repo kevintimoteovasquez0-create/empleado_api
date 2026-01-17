@@ -101,7 +101,7 @@ async function main() {
       rol_id: adminRoleSegundo.id,  
       empresa_id: empresa.id,
       nombre_imagen: 'empresoft.jpg',
-      verificado_email: true, 
+      verificado_email: true,
     };
     
     // Creación en Prisma

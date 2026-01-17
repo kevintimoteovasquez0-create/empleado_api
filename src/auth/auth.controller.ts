@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -34,6 +34,7 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @HttpCode(200)
   @Post('/login')
   @ApiOperation({
     summary: 'Iniciar sesión',
@@ -46,6 +47,7 @@ export class AuthController {
   }
 
   @Post('/password/recover')
+  @HttpCode(200)
   @ApiOperation({
     summary: 'Recuperar contraseña',
     description: 'Envía un correo para la recuperación de contraseña',
@@ -58,6 +60,31 @@ export class AuthController {
   //2FA
   @Post('2fa/verify')
   @HttpCode(200)
+  @ApiOperation({ 
+    summary: 'Verificar código 2FA en login',
+    description: 'Verifica el código TOTP durante el proceso de inicio de sesión para usuarios con 2FA activo'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Código verificado correctamente - Sesión iniciada',
+    schema: {
+      example: {
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        user: {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          email: 'user@example.com'
+        }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Código TOTP inválido o expirado'
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Usuario no encontrado'
+  })
   async verify2FA(
     @Body() verifyTwoFactorDto: VerifyTwoFactorDto,
     @Res() res: Response,
@@ -83,13 +110,54 @@ export class AuthController {
   @Post('2fa/enable')
   @UseGuards(AuthGuard)
   @HttpCode(200)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'Habilitar autenticación de dos factores',
+    description: 'Genera un código QR y secret para configurar 2FA en la cuenta del usuario autenticado'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Código QR y secret generados exitosamente',
+    schema: {
+      example: {
+        qrCode: 'data:image/png;base64,iVBORw0KGgoAAAANS...',
+        secret: 'JBSWY3DPEHPK3PXP'
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'No autenticado - Token inválido o ausente'
+  })
   async enable2FA(@Req() req: AuthRequest) {
     return this.authService.enable2FA(req.user.id);
   }
 
-  @Post('2fa/confirm')
+  @Patch('2fa/confirm')
   @UseGuards(AuthGuard)
   @HttpCode(200)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Confirmar habilitación de 2FA',
+    description: 'Confirma y activa la autenticación de dos factores verificando el código TOTP'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: '2FA activado exitosamente',
+    schema: {
+      example: {
+        message: 'Autenticación de dos factores activada correctamente'
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Código TOTP inválido'
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'No autenticado - Token inválido o ausente'
+  })
   async confirm2FA(
     @Req() req: AuthRequest,
     @Body() confirmTwoFactorDto: ConfirmTwoFactorDto,
@@ -97,7 +165,7 @@ export class AuthController {
     return this.authService.confirm2FA(req.user.id, confirmTwoFactorDto);
   }
 
-  @Post('2fa/regenerate-codes')
+  @Patch('2fa/regenerate-codes')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @HttpCode(200)
@@ -115,9 +183,31 @@ export class AuthController {
     return this.authService.regenerateRecoveryCodes(req.user.id, regenerateRecoveryCodesDto);
   }
 
-  @Post('2fa/disable')
+  @Patch('2fa/disable')
   @UseGuards(AuthGuard)
   @HttpCode(200)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'Deshabilitar autenticación de dos factores',
+    description: 'Desactiva 2FA en la cuenta del usuario autenticado verificando el código TOTP actual'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: '2FA deshabilitado exitosamente',
+    schema: {
+      example: {
+        message: 'Autenticación de dos factores deshabilitada correctamente'
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Código TOTP inválido o 2FA no está habilitado'
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'No autenticado - Token inválido o ausente'
+  })
   async disable2FA(
     @Req() req: AuthRequest,
     @Body() disableTwoFactorDto: DisableTwoFactorDto,

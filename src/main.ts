@@ -38,9 +38,9 @@ async function bootstrap() {
   }))
 
   const config = new DocumentBuilder()
-    .setTitle('empresoftperu')
-    .setDescription('APIs para empresoftperu')
-    .setVersion('1.1')
+    .setTitle('EMPRESOFT PERU SAC')
+    .setDescription('APIs para EMPRESOFT PERU SAC')
+    .setVersion('1.0')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, documentFactory);
