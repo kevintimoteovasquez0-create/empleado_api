@@ -46,10 +46,10 @@ export class AuthService {
 
   private setCookieJWT(res: Response, token: string): void {
     res.cookie('jwt', token, {
-      httpOnly: true, // Protege contra XSS
-      secure: process.env.NODE_ENV === 'production', // HTTPS en producción
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // CSRF protection
-      maxAge: 24 * 60 * 60 * 1000, // 1 día
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
       path: '/',
     });
   }
