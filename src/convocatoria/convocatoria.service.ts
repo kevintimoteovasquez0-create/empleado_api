@@ -46,6 +46,7 @@ export class ConvocatoriaService {
 
       const response = await this.db
         .select({
+          id: ConvocatoriaTable.id,
           usuario_creador: {
             id: UsuarioCreador.id,
             nombre: UsuarioCreador.nombre,

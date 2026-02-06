@@ -5,7 +5,9 @@ import { AccesoTable } from '../schema/acceso';
 import { Rol_Acceso_Table } from '../schema/rol_acceso';
 import { UsuarioTable } from '../schema/usuario';
 import { DrizzleService } from '../drizzle.service';
-import { AreaTrabajoTable } from '../schema/area';
+import { AreaTable } from '../schema/area';
+import { eq } from 'drizzle-orm';
+import { EmpleadoTable } from '../schema/empleado';
 
 async function main() {
 
@@ -30,9 +32,10 @@ async function main() {
       ruc: "12345678911"
     }).returning();
 
-    const [areaTrabajo] = await db.insert(AreaTrabajoTable).values({
+    const [areaTrabajo] = await db.insert(AreaTable).values({
       nombre: 'Gerente General',
-      descripcion: 'Es gerente general'
+      descripcion: 'Es gerente general',
+      responsable_id: null
     }).returning()
 
     await db.insert(AccesoTable).values([
@@ -46,7 +49,7 @@ async function main() {
       { path: "delivery", descripcion: "1" },
       { path: "estadisticas", descripcion: "1" },
     ]);
-    
+
 
     // Obtener todos los accesos creados
     const accesos = await db.select().from(AccesoTable);
@@ -72,8 +75,8 @@ async function main() {
       nombre: 'usuario',
       apellido: 'apellidousuario',
       tipo_documento: "DNI" as const,
-      numero_documento: '78945612',  
-      fecha_nacimiento: new Date('1990-01-01').toISOString(),  
+      numero_documento: '78945612',
+      fecha_nacimiento: new Date('1990-01-01').toISOString(),
       fecha_ingreso: new Date().toISOString(),
       direccion: 'Av. Siempre Viva 742',
       pais: 'Perú',
@@ -83,11 +86,11 @@ async function main() {
       telefono: '987654321',
       email: 'empresoftperu@gmail.com',
       password: hashedPassword,
-      rol_id: adminRole.id, 
+      rol_id: adminRole.id,
       empresa_id: empresa.id,
       area_id: areaTrabajo.id,
       nombre_imagen: 'empresoft.jpg',
-      verificado_email: true, 
+      verificado_email: true,
     };
 
     const usuarioDataDos = {
@@ -105,16 +108,42 @@ async function main() {
       telefono: '956123789',
       email: 'leonsaavedrajosefabian573@gmail.com',
       password: hashedPassword,
-      rol_id: adminRoleSegundo.id,  
+      rol_id: adminRoleSegundo.id,
       empresa_id: empresa.id,
       area_id: areaTrabajo.id,
       nombre_imagen: 'empresoft.jpg',
       verificado_email: true,
     };
-    
+
     // Creación en Prisma
-    await db.insert(UsuarioTable).values(usuarioData); 
-    await db.insert(UsuarioTable).values(usuarioDataDos); 
+    const [usuarioAdmin] = await db.insert(UsuarioTable).values(usuarioData).returning();
+    await db.insert(UsuarioTable).values(usuarioDataDos);
+
+    const [area] = await db.update(AreaTable)
+      .set({ responsable_id: usuarioAdmin.id })
+      .where(eq(AreaTable.id, areaTrabajo.id)).returning();
+
+    await db
+      .insert(EmpleadoTable)
+      .values({
+        usuario_id: usuarioAdmin.id,
+        area_id: area.id,
+        nombres: 'Juan Carlos',
+        apellidos: 'Pérez Gómez',
+        tipo_documento: 'dni',              
+        numero_documento: '87654321',
+        cargo: 'Administrador',
+        tipo_personal: 'planilla',          
+        fecha_ingreso: new Date(),
+        fecha_nacimiento: new Date('1990-05-10'),
+        telefono: '987654321',
+        email_corporativo: 'juan.perez@empresa.com',
+        direccion: 'Av. Principal 123',
+        distrito: 'Miraflores',
+        auditoria_progreso: null,          
+        estado_legajo: 'pendiente',          
+      })
+      .returning();
 
     console.log('Seeders insertados correctamente.');
   } catch (err) {
