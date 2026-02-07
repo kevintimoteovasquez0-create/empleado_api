@@ -13,23 +13,24 @@ import { ConvocatoriaModule } from './convocatoria/convocatoria.module';
 import { HistorialConvocatoriaModule } from './historial_convocatoria/historial_convocatoria.module';
 import { AreaModule } from './area/area.module';
 import { EmpleadoModule } from './empleado/empleado.module';
+import { LicenciaMedicaModule } from './licencia_medica/licencia_medica.module';
 
 @Module({
   imports: [
-    UsuarioModule, 
-    AuthModule, 
+    UsuarioModule,
+    AuthModule,
     EmailModule,
-    RolModule, 
-    AccesoModule, 
-    ReniecModule, 
-    FotoModule, 
-    EmpresaModule, 
+    RolModule,
+    AccesoModule,
+    ReniecModule,
+    FotoModule,
+    EmpresaModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-    }), DrizzleModule, ConvocatoriaModule, HistorialConvocatoriaModule, AreaModule, EmpleadoModule
+    }), DrizzleModule, ConvocatoriaModule, HistorialConvocatoriaModule, AreaModule, EmpleadoModule, LicenciaMedicaModule
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }
