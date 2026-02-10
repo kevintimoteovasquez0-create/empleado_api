@@ -16,6 +16,7 @@ import { and, eq, gte, lte, ne, or, SQL } from 'drizzle-orm';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { getTableColumns } from 'drizzle-orm';
 import { count } from 'drizzle-orm';
+import { Multer } from 'multer';
 
 @Injectable()
 export class UsuarioService {
@@ -34,7 +35,7 @@ export class UsuarioService {
     try {
       const { rol_id, ...restoCamposUsuario } = getTableColumns(UsuarioTable)
 
-      const [usuario] = await this.db
+      const [responseUsuarioId] = await this.db
         .select({
           ...restoCamposUsuario,
           rol: {
@@ -56,14 +57,14 @@ export class UsuarioService {
         )
         .limit(1)
 
-      if (!usuario) {
+      if (!responseUsuarioId) {
         throw new NotFoundException(`No se encontro el usuario con id ${id}`)
       }
 
       return {
-        ...usuario,
-        imagen_url: usuario.nombre_imagen
-          ? this.fotoService.obtenerUrlCompleta('usuario', usuario.id, usuario.nombre_imagen)
+        responseUsuarioId,
+        imagen_url: responseUsuarioId.nombre_imagen
+          ? this.fotoService.obtenerUrlCompleta('usuario', responseUsuarioId.id, responseUsuarioId.nombre_imagen)
           : null
       };
 
@@ -78,7 +79,7 @@ export class UsuarioService {
 
       const { rol_id, ...restoCamposEmail } = getTableColumns(UsuarioTable)
 
-      const [buscarUsuarioByEmail] = await this.db
+      const [responseBuscarUsuarioByEmail] = await this.db
         .select({
           ...restoCamposEmail,
           rol: {
@@ -97,14 +98,14 @@ export class UsuarioService {
         )
         .limit(1)
 
-      if (!buscarUsuarioByEmail) {
+      if (!responseBuscarUsuarioByEmail) {
         throw new NotFoundException(`El usuario no fue encontrado`)
       }
 
       return {
-        ...buscarUsuarioByEmail,
-        imagen_url: buscarUsuarioByEmail.nombre_imagen
-          ? this.fotoService.obtenerUrlCompleta('usuario', buscarUsuarioByEmail.id, buscarUsuarioByEmail.nombre_imagen)
+        responseBuscarUsuarioByEmail,
+        imagen_url: responseBuscarUsuarioByEmail.nombre_imagen
+          ? this.fotoService.obtenerUrlCompleta('usuario', responseBuscarUsuarioByEmail.id, responseBuscarUsuarioByEmail.nombre_imagen)
           : null
       };
 
@@ -283,7 +284,7 @@ export class UsuarioService {
 
       await this.usuarioExistenteAlCrear(createUsuarioDto.email, createUsuarioDto.numero_documento, createUsuarioDto.telefono)
 
-      const [createUsuario] = await this.db
+      const responseCreateUsuario = await this.db
         .insert(UsuarioTable)
         .values({
           // Datos básicos
@@ -312,7 +313,7 @@ export class UsuarioService {
           token_expiry_email: new Date(Date.now() + 86400000),
         })
         .returning();
-
+      const createUsuario = responseCreateUsuario[0];
       const imagen_url = await this.fotoService.guardarImagen(createUsuario.id, 'usuario', fotoUsuario)
       //Registar foto de perfil
       await this.updateNombrefotoUsuario(createUsuario.id, { foto_url: imagen_url })
@@ -366,7 +367,7 @@ export class UsuarioService {
 
       await this.usuarioExistenteAlActualizar(id, email, numero_documento, telefono)
 
-      const pathUrl = await this.fotoService.actualizarImagen(usuario.id, 'usuario', usuario.nombre_imagen, fotoUsuario)
+      const pathUrl = await this.fotoService.actualizarImagen(usuario.responseUsuarioId.id, 'usuario', usuario.responseUsuarioId.nombre_imagen, fotoUsuario)
 
       const [updateUsuario] = await this.db
         .update(UsuarioTable)

@@ -32,11 +32,12 @@ async function main() {
       ruc: "12345678911"
     }).returning();
 
-    const [areaTrabajo] = await db.insert(AreaTable).values({
+    const areaTrabajo = await db.insert(AreaTable).values({
       nombre: 'Gerente General',
       descripcion: 'Es gerente general',
       responsable_id: null
     }).returning();
+    const responseAreaTrabajo = areaTrabajo[0]
 
     await db.insert(AccesoTable).values([
       { path: "local", descripcion: "1" },
@@ -88,7 +89,7 @@ async function main() {
       password: hashedPassword,
       rol_id: adminRole.id,
       empresa_id: empresa.id,
-      area_id: areaTrabajo.id,
+      area_id: responseAreaTrabajo.id,
       nombre_imagen: 'empresoft.jpg',
       verificado_email: true,
     };
@@ -110,7 +111,7 @@ async function main() {
       password: hashedPassword,
       rol_id: adminRoleSegundo.id,
       empresa_id: empresa.id,
-      area_id: areaTrabajo.id,
+      area_id: responseAreaTrabajo.id,
       nombre_imagen: 'empresoft.jpg',
       verificado_email: true,
     };
@@ -121,7 +122,7 @@ async function main() {
 
     const [area] = await db.update(AreaTable)
       .set({ responsable_id: usuarioAdmin.id })
-      .where(eq(AreaTable.id, areaTrabajo.id)).returning();
+      .where(eq(AreaTable.id, responseAreaTrabajo.id)).returning();
 
     await db
       .insert(EmpleadoTable)
@@ -130,18 +131,18 @@ async function main() {
         area_id: area.id,
         nombres: 'Juan Carlos',
         apellidos: 'Pérez Gómez',
-        tipo_documento: 'dni',              
+        tipo_documento: 'dni',
         numero_documento: '87654321',
         cargo: 'Administrador',
-        tipo_personal: 'planilla',          
+        tipo_personal: 'planilla',
         fecha_ingreso: new Date(),
         fecha_nacimiento: new Date('1990-05-10'),
         telefono: '987654321',
         email_corporativo: 'juan.perez@empresa.com',
         direccion: 'Av. Principal 123',
         distrito: 'Miraflores',
-        auditoria_progreso: null,          
-        estado_legajo: 'pendiente',          
+        auditoria_progreso: null,
+        estado_legajo: 'pendiente',
       })
       .returning();
 

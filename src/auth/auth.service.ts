@@ -40,7 +40,7 @@ export class AuthService {
   ) {
   }
 
-  private get db(){
+  private get db() {
     return this.drizzleService.getDb()
   }
 
@@ -68,7 +68,7 @@ export class AuthService {
     return Promise.all(codes.map(code => bcrypt.hash(code, 10)));
   }
 
-  async obtenerInfoUsuario(id){
+  async obtenerInfoUsuario(id) {
     const usuario = await this.usuarioService.findUniqueUsuario(id, true);
     return {
       data: usuario
@@ -92,13 +92,13 @@ export class AuthService {
 
       const mensajeError = 'Correo o contraseña incorrectos';
 
-      if (!usuario || usuario.verificado_email == false) {
+      if (!usuario || usuario.responseBuscarUsuarioByEmail.verificado_email == false) {
         throw new UnauthorizedException(mensajeError);
       }
 
       const encontrarClave = await bcrypt.compare(
         loginDto.password,
-        usuario.password,
+        usuario.responseBuscarUsuarioByEmail.password,
       );
 
       if (!encontrarClave) {
@@ -106,11 +106,11 @@ export class AuthService {
       }
 
       // Si el usuario tiene 2FA activado
-      if (usuario.auth_two_factor && usuario.two_factor_secret) {
+      if (usuario.responseBuscarUsuarioByEmail.auth_two_factor && usuario.responseBuscarUsuarioByEmail.two_factor_secret) {
         // Generar token temporal de 5 minutos
         const tempPayload: TempPayload = {
-          id: usuario.id,
-          email: usuario.email,
+          id: usuario.responseBuscarUsuarioByEmail.id,
+          email: usuario.responseBuscarUsuarioByEmail.email,
           pendingTwoFactor: true,
         };
         const tempToken = await this.jwtService.signAsync(tempPayload, {
@@ -125,12 +125,12 @@ export class AuthService {
       }
 
       const data: AuthPayload = {
-        id: usuario.id,
-        email: usuario.email,
-        rol_id: usuario.rol.id,
-        rol_nombre: usuario.rol.nombre,
-        empresa_id: usuario.empresa_id,
-        empresa_nombre: usuario.empresa.razon_social,
+        id: usuario.responseBuscarUsuarioByEmail.id,
+        email: usuario.responseBuscarUsuarioByEmail.email,
+        rol_id: usuario.responseBuscarUsuarioByEmail.rol.id,
+        rol_nombre: usuario.responseBuscarUsuarioByEmail.rol.nombre,
+        empresa_id: usuario.responseBuscarUsuarioByEmail.empresa_id,
+        empresa_nombre: usuario.responseBuscarUsuarioByEmail.empresa.razon_social,
         foto_usuario: usuario.imagen_url
       };
 
@@ -139,7 +139,7 @@ export class AuthService {
       // Establecer el token en una cookie segura
       this.setCookieJWT(res, token);
 
-      return res.send({ 
+      return res.send({
         message: 'Inicio de sesión exitoso',
         data: data
       });
@@ -147,7 +147,7 @@ export class AuthService {
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error; // Mantener el estado HTTP 401
-      } 
+      }
 
       throw new InternalServerErrorException(`Ocurrio un error al hacer login: ${error}`);
     }
@@ -173,13 +173,13 @@ export class AuthService {
       // Buscar usuario
       const usuario = await this.usuarioService.findUniqueUsuario(payload.id, true);
 
-      if (!usuario || !usuario.auth_two_factor || !usuario.two_factor_secret) {
+      if (!usuario || !usuario.responseUsuarioId.auth_two_factor || !usuario.responseUsuarioId.two_factor_secret) {
         throw new UnauthorizedException('2FA no está habilitado para este usuario');
       }
 
       // Verificar el código TOTP
       const isValid = speakeasy.totp.verify({
-        secret: usuario.two_factor_secret,
+        secret: usuario.responseUsuarioId.two_factor_secret,
         encoding: 'base32',
         token: codigo,
         window: 2,
@@ -191,21 +191,21 @@ export class AuthService {
 
       // Código correcto, generar token completo
       const data: AuthPayload = {
-        id: usuario.id,
-        email: usuario.email,
-        rol_id: usuario.rol.id,
-        rol_nombre: usuario.rol.nombre,
-        empresa_id: usuario.empresa_id,
-        empresa_nombre: usuario.empresa.razon_social,
+        id: usuario.responseUsuarioId.id,
+        email: usuario.responseUsuarioId.email,
+        rol_id: usuario.responseUsuarioId.rol.id,
+        rol_nombre: usuario.responseUsuarioId.rol.nombre,
+        empresa_id: usuario.responseUsuarioId.empresa_id,
+        empresa_nombre: usuario.responseUsuarioId.empresa.razon_social,
         foto_usuario: usuario.imagen_url
       };
-      
+
       const token = await this.generateToken(data);
 
       // Establecer el token en una cookie segura
       this.setCookieJWT(res, token);
 
-      return res.send({ 
+      return res.send({
         message: 'Inicio de sesion exitoso',
         data: data
       });
@@ -238,16 +238,16 @@ export class AuthService {
       // Buscar usuario
       const usuario = await this.usuarioService.findUniqueUsuario(payload.id, true);
 
-      if (!usuario || !usuario.auth_two_factor) {
+      if (!usuario || !usuario.responseUsuarioId.auth_two_factor) {
         throw new UnauthorizedException('2FA no esta habilitado para este usuario');
       }
 
-      if (!usuario.recovery_codes) {
+      if (!usuario.responseUsuarioId.recovery_codes) {
         throw new BadRequestException('No hay codigos de recuperacion disponibles');
       }
 
       // Parsear los códigos hasheados
-      const hashedCodes: string[] = JSON.parse(usuario.recovery_codes);
+      const hashedCodes: string[] = JSON.parse(usuario.responseUsuarioId.recovery_codes);
       let codeUsed = false;
       let remainingCodes: string[] = [];
 
@@ -268,31 +268,31 @@ export class AuthService {
       // Actualizar códigos restantes
       await this.db
         .update(UsuarioTable)
-        .set({ 
+        .set({
           recovery_codes: JSON.stringify(remainingCodes),
           updated_at: new Date()
         })
-        .where(eq(UsuarioTable.id, usuario.id));
+        .where(eq(UsuarioTable.id, usuario.responseUsuarioId.id));
 
       const data: AuthPayload = {
-        id: usuario.id,
-        email: usuario.email,
-        rol_id: usuario.rol.id,
-        rol_nombre: usuario.rol.nombre,
-        empresa_id: usuario.empresa_id,
-        empresa_nombre: usuario.empresa.razon_social,
+        id: usuario.responseUsuarioId.id,
+        email: usuario.responseUsuarioId.email,
+        rol_id: usuario.responseUsuarioId.rol.id,
+        rol_nombre: usuario.responseUsuarioId.rol.nombre,
+        empresa_id: usuario.responseUsuarioId.empresa_id,
+        empresa_nombre: usuario.responseUsuarioId.empresa.razon_social,
         foto_usuario: usuario.imagen_url
       };
-      
+
       const token = await this.generateToken(data);
 
       // Establecer el token en una cookie segura
       this.setCookieJWT(res, token);
 
-      return res.send({ 
+      return res.send({
         message: 'Inicio de sesión exitoso con código de recuperación',
         data: data,
-        warning: remainingCodes.length === 0 
+        warning: remainingCodes.length === 0
           ? 'Has usado tu ultimo codigo de recuperacion. Por favor, genera nuevos codigos desde tu perfil.'
           : `Te quedan ${remainingCodes.length} codigo(s) de recuperación.`
       });
@@ -313,20 +313,20 @@ export class AuthService {
         throw new NotFoundException('Usuario no encontrado');
       }
 
-      if (usuario.auth_two_factor) {
+      if (usuario.responseUsuarioId.auth_two_factor) {
         throw new BadRequestException('2FA ya está habilitado para este usuario');
       }
 
       // Generar secreto único
       const secret = speakeasy.generateSecret({
-        name: `${envs.appName || 'empresoftperusac'} (${usuario.email})`,
+        name: `${envs.appName || 'empresoftperusac'} (${usuario.responseUsuarioId.email})`,
         length: 32,
       });
 
       // Guardar el secreto
       await this.db
         .update(UsuarioTable)
-        .set({ 
+        .set({
           two_factor_secret: secret.base32,
           updated_at: new Date()
         })
@@ -360,17 +360,17 @@ export class AuthService {
         throw new NotFoundException('Usuario no encontrado');
       }
 
-      if (!usuario.two_factor_secret) {
+      if (!usuario.responseUsuarioId.two_factor_secret) {
         throw new BadRequestException('Primero debes generar el código QR.');
       }
 
-      if (usuario.auth_two_factor) {
+      if (usuario.responseUsuarioId.auth_two_factor) {
         throw new BadRequestException('2FA ya está activo');
       }
 
       // Verificar el código
       const isValid = speakeasy.totp.verify({
-        secret: usuario.two_factor_secret,
+        secret: usuario.responseUsuarioId.two_factor_secret,
         encoding: 'base32',
         token: codigo,
         window: 2,
@@ -387,7 +387,7 @@ export class AuthService {
       // ACTIVAR 2FA
       await this.db
         .update(UsuarioTable)
-        .set({ 
+        .set({
           auth_two_factor: true,
           recovery_codes: JSON.stringify(hashedCodes),
           updated_at: new Date()
@@ -420,13 +420,13 @@ export class AuthService {
         throw new NotFoundException('Usuario no encontrado');
       }
 
-      if (!usuario.auth_two_factor || !usuario.two_factor_secret) {
+      if (!usuario.responseUsuarioId.auth_two_factor || !usuario.responseUsuarioId.two_factor_secret) {
         throw new BadRequestException('2FA no está habilitado');
       }
 
       // Verificar código TOTP antes de regenerar
       const isValid = speakeasy.totp.verify({
-        secret: usuario.two_factor_secret,
+        secret: usuario.responseUsuarioId.two_factor_secret,
         encoding: 'base32',
         token: codigo,
         window: 2,
@@ -443,7 +443,7 @@ export class AuthService {
       // Actualizar códigos en la BD
       await this.db
         .update(UsuarioTable)
-        .set({ 
+        .set({
           recovery_codes: JSON.stringify(hashedCodes),
           updated_at: new Date()
         })
@@ -475,13 +475,13 @@ export class AuthService {
         throw new NotFoundException('Usuario no encontrado');
       }
 
-      if (!usuario.auth_two_factor) {
+      if (!usuario.responseUsuarioId.auth_two_factor) {
         throw new BadRequestException('2FA no está habilitado');
       }
 
       // Verificar código antes de deshabilitar
       const isValid = speakeasy.totp.verify({
-        secret: usuario.two_factor_secret,
+        secret: usuario.responseUsuarioId.two_factor_secret,
         encoding: 'base32',
         token: codigo,
         window: 2,
@@ -494,7 +494,7 @@ export class AuthService {
       // Deshabilitar 2FA
       await this.db
         .update(UsuarioTable)
-        .set({ 
+        .set({
           auth_two_factor: false,
           two_factor_secret: null,
           recovery_codes: null,
@@ -542,13 +542,13 @@ export class AuthService {
           updated_at: new Date()
         })
         .where(eq(UsuarioTable.email, emailDto.email))
-        
+
       // Enviar correo con el enlace
       return await this.emailService.enviarRecuperadoPassword(
         emailDto.email,
         linkRecuperacion,
       );
-      
+
     } catch (error) {
       throw new InternalServerErrorException(`Ocurrio un error al intentar recuperar el passwod: ${error}`);
     }
@@ -559,7 +559,7 @@ export class AuthService {
 
       const { jwt } = req.cookies
 
-      if(!jwt){
+      if (!jwt) {
         throw new UnauthorizedException('No se encontro el token')
       }
 

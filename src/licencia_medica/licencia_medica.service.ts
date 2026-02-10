@@ -1,250 +1,220 @@
-import {
-  Injectable,
-  NotFoundException,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import { and, getTableColumns } from 'drizzle-orm';
-import { count, eq } from 'drizzle-orm';
-import { PaginationDto } from 'src/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { and, getTableColumns, count, eq } from 'drizzle-orm';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { DrizzleService } from 'src/drizzle/drizzle.service';
+import { LicenciaMedicaTable } from 'src/drizzle/schema/licencia_medica';
 import { EmpleadoTable } from 'src/drizzle/schema/empleado';
-import { UsuarioTable } from 'src/drizzle/schema/usuario';
-import { licencia_medica } from 'src/drizzle/schema/licencia_medica';
-import { CreateLicenciaMedicaDto } from './dto/create-licencia_medica.dto';
-import { UpdateLicenciaMedicaDto } from './dto/update-licencia_medica.dto';
+import { CreateLicenciaMedicaDto } from './dto/create-licencia-medica.dto';
+import { UpdateLicenciaMedicaDto } from './dto/update-licencia-medica.dto';
 
 @Injectable()
 export class LicenciaMedicaService {
-  constructor(private readonly drizzleService: DrizzleService) {}
 
-  private get db() {
-    return this.drizzleService.getDb();
-  }
+    constructor(
+        private readonly drizzleService: DrizzleService,
+    ) { }
 
-  async findAllLicenciasMedicas(paginationDto: PaginationDto, estado: boolean) {
-    try {
-      const { page, limit } = paginationDto;
-
-      const [{ total }] = await this.db
-        .select({ total: count() })
-        .from(licencia_medica)
-        .where(eq(licencia_medica.estado_registro, estado));
-
-      const getAllRegistrosLicencias = Number(total);
-
-      const finalPage = page ?? 1;
-      const finalLimit = limit ?? 10;
-
-      const numberPages = Math.ceil(getAllRegistrosLicencias / finalLimit);
-
-      const { empleado_id, revisado_por, ...restoCamposLicencia } =
-        getTableColumns(licencia_medica);
-
-      const responseLicencias = await this.db
-        .select({
-          ...restoCamposLicencia,
-          empleado: {
-            id: EmpleadoTable.id,
-            nombres: EmpleadoTable.nombres,
-            apellidos: EmpleadoTable.apellidos,
-          },
-          revisor: {
-            id: UsuarioTable.id,
-            nombre: UsuarioTable.nombre,
-            apellido: UsuarioTable.apellido,
-          },
-        })
-        .from(licencia_medica)
-        .leftJoin(
-          EmpleadoTable,
-          eq(licencia_medica.empleado_id, EmpleadoTable.id),
-        )
-        .leftJoin(
-          UsuarioTable,
-          eq(licencia_medica.revisado_por, UsuarioTable.id),
-        )
-        .where(eq(licencia_medica.estado_registro, estado))
-        .limit(finalLimit)
-        .offset((finalPage - 1) * finalLimit);
-
-      return {
-        data: responseLicencias,
-        pagination: {
-          total: getAllRegistrosLicencias,
-          page: finalPage,
-          limit: finalLimit,
-          finalPage: numberPages,
-        },
-      };
-    } catch (error) {
-      throw new InternalServerErrorException(
-        `Ocurrió un error con el sistema: ${error}`,
-      );
+    private get db() {
+        return this.drizzleService.getDb();
     }
-  }
 
-  async findLicenciaMedicaById(id: number, estado: boolean) {
-    try {
-      const { empleado_id, revisado_por, ...restoCamposLicencia } =
-        getTableColumns(licencia_medica);
+    async findAllLicenciasMedicas(paginationDto: PaginationDto, estado: boolean) {
+        try {
 
-      const [response] = await this.db
-        .select({
-          ...restoCamposLicencia,
-          empleado: {
-            id: EmpleadoTable.id,
-            nombres: EmpleadoTable.nombres,
-            apellidos: EmpleadoTable.apellidos,
-          },
-          revisor: {
-            id: UsuarioTable.id,
-            nombre: UsuarioTable.nombre,
-            apellido: UsuarioTable.apellido,
-          },
-        })
-        .from(licencia_medica)
-        .leftJoin(
-          EmpleadoTable,
-          eq(licencia_medica.empleado_id, EmpleadoTable.id),
-        )
-        .leftJoin(
-          UsuarioTable,
-          eq(licencia_medica.revisado_por, UsuarioTable.id),
-        )
-        .where(
-          and(
-            eq(licencia_medica.id, id),
-            eq(licencia_medica.estado_registro, estado),
-          ),
-        )
-        .limit(1);
+            const { page, limit } = paginationDto
 
-      if (!response) {
-        throw new NotFoundException(
-          `No se encontró la licencia médica con id ${id}`,
-        );
-      }
+            const [{ total }] = await this.db
+                .select({ total: count() })
+                .from(LicenciaMedicaTable)
+                .where(eq(LicenciaMedicaTable.estado_registro, estado))
 
-      return response;
-    } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException(
-        `Ocurrió un error con el sistema: ${error}`,
-      );
+            const getAllRegistrosLicencia = Number(total)
+
+            const finalPage = page ?? 1
+            const finalLimit = limit ?? 10
+
+            const numberPages = Math.ceil(getAllRegistrosLicencia / finalLimit)
+
+            const { empleado_id, ...restoCamposLicencia } = getTableColumns(LicenciaMedicaTable)
+
+            const responseLicencias = await this.db
+                .select({
+                    ...restoCamposLicencia,
+                    empleado: {
+                        id: EmpleadoTable.id,
+                        nombres: EmpleadoTable.nombres,
+                        apellidos: EmpleadoTable.apellidos
+                    }
+                })
+                .from(LicenciaMedicaTable)
+                .innerJoin(EmpleadoTable, eq(LicenciaMedicaTable.empleado_id, EmpleadoTable.id))
+                .where(eq(LicenciaMedicaTable.estado_registro, estado))
+                .limit(finalLimit)
+                .offset((finalPage - 1) * finalLimit)
+
+            return {
+                data: responseLicencias,
+                pagination: {
+                    total: getAllRegistrosLicencia,
+                    page: finalPage,
+                    limit: finalLimit,
+                    finalPage: numberPages
+                }
+            }
+
+        } catch (error) {
+            throw new InternalServerErrorException(
+                `Ocurrió un error con el sistema: ${error}`,
+            );
+        }
     }
-  }
 
-  async createLicenciaMedica(createLicenciaMedicaDto: CreateLicenciaMedicaDto) {
-    try {
-      const valuesToInsert = {
-        ...createLicenciaMedicaDto,
-        fecha_inicio: createLicenciaMedicaDto.fecha_inicio
-          .toISOString()
-          .split('T')[0],
-      };
+    async findLicenciaMedicaById(id: number, estado: boolean) {
+        try {
 
-      await this.db.insert(licencia_medica).values(valuesToInsert);
+            const { empleado_id, ...restoCamposLicencia } = getTableColumns(LicenciaMedicaTable)
 
-      return {
-        message: 'Licencia médica creada correctamente',
-      };
-    } catch (error) {
-      throw new InternalServerErrorException(
-        `Ocurrió un error con el sistema: ${error}`,
-      );
+            const [response] = await this.db
+                .select({
+                    ...restoCamposLicencia,
+                    empleado: {
+                        id: EmpleadoTable.id,
+                        nombres: EmpleadoTable.nombres,
+                        apellidos: EmpleadoTable.apellidos
+                    }
+                })
+                .from(LicenciaMedicaTable)
+                .innerJoin(EmpleadoTable, eq(LicenciaMedicaTable.empleado_id, EmpleadoTable.id))
+                .where(
+                    and(
+                        eq(LicenciaMedicaTable.id, id),
+                        eq(LicenciaMedicaTable.estado_registro, estado))
+                )
+                .limit(1)
+
+            if (!response) {
+                throw new NotFoundException(`No se encontró la licencia médica con id ${id}`)
+            }
+
+            return response
+
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new InternalServerErrorException(
+                `Ocurrió un error con el sistema: ${error}`,
+            );
+        }
     }
-  }
 
-  async updateLicenciaMedica(
-    id: number,
-    updateLicenciaMedicaDto: UpdateLicenciaMedicaDto,
-  ) {
-    try {
-      await this.findLicenciaMedicaById(id, true);
+    async createLicenciaMedica(createLicenciaMedicaDto: CreateLicenciaMedicaDto) {
+        try {
 
-      const valuesToUpdate: any = { ...updateLicenciaMedicaDto };
-      if (valuesToUpdate.fecha_inicio) {
-        valuesToUpdate.fecha_inicio = valuesToUpdate.fecha_inicio
-          .toISOString()
-          .split('T')[0];
-      }
+            await this.db
+                .insert(LicenciaMedicaTable)
+                .values({ ...createLicenciaMedicaDto })
 
-      await this.db
-        .update(licencia_medica)
-        .set(valuesToUpdate)
-        .where(eq(licencia_medica.id, id));
+            return {
+                message: "Licencia médica creada correctamente"
+            }
 
-      return {
-        message: 'Licencia médica actualizada correctamente',
-      };
-    } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException(
-        `Ocurrió un error con el sistema: ${error}`,
-      );
+        } catch (error) {
+            throw new InternalServerErrorException(
+                `Ocurrió un error con el sistema: ${error}`,
+            );
+        }
     }
-  }
 
-  async restoreLicenciaMedica(id: number) {
-    try {
-      await this.findLicenciaMedicaById(id, false);
+    async updateLicenciaMedica(id: number, updateLicenciaMedicaDto: UpdateLicenciaMedicaDto) {
+        try {
+            await this.findLicenciaMedicaById(id, true)
 
-      await this.db
-        .update(licencia_medica)
-        .set({ estado_registro: true })
-        .where(eq(licencia_medica.id, id));
+            await this.db
+                .update(LicenciaMedicaTable)
+                .set({ ...updateLicenciaMedicaDto })
+                .where(eq(LicenciaMedicaTable.id, id))
 
-      return {
-        message: 'Licencia médica restaurada correctamente',
-      };
-    } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException(
-        `Ocurrió un error con el sistema: ${error}`,
-      );
+            return {
+                message: "Licencia médica actualizada correctamente"
+            }
+
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new InternalServerErrorException(
+                `Ocurrió un error con el sistema: ${error}`,
+            );
+        }
     }
-  }
 
-  async removeLicenciaMedica(id: number) {
-    try {
-      await this.findLicenciaMedicaById(id, true);
+    async restoreLicenciaMedica(id: number) {
+        try {
 
-      await this.db
-        .update(licencia_medica)
-        .set({ estado_registro: false })
-        .where(eq(licencia_medica.id, id));
+            await this.findLicenciaMedicaById(id, false)
 
-      return {
-        message: 'Licencia médica removida correctamente',
-      };
-    } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException(
-        `Ocurrió un error con el sistema: ${error}`,
-      );
+            await this.db
+                .update(LicenciaMedicaTable)
+                .set({ estado_registro: true })
+                .where(eq(LicenciaMedicaTable.id, id))
+
+            return {
+                message: "Licencia médica restaurada correctamente"
+            }
+
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new InternalServerErrorException(
+                `Ocurrió un error con el sistema: ${error}`,
+            );
+        }
     }
-  }
 
-  async updateEstado(
-    id: number,
-    estado: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO',
-  ) {
-    try {
-      await this.findLicenciaMedicaById(id, true);
+    async removeLicenciaMedica(id: number) {
+        try {
 
-      await this.db
-        .update(licencia_medica)
-        .set({ estado })
-        .where(eq(licencia_medica.id, id));
+            await this.findLicenciaMedicaById(id, true)
 
-      return {
-        message: `Estado de licencia médica actualizado a ${estado} correctamente`,
-      };
-    } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException(
-        `Ocurrió un error con el sistema: ${error}`,
-      );
+            await this.db
+                .update(LicenciaMedicaTable)
+                .set({ estado_registro: false })
+                .where(eq(LicenciaMedicaTable.id, id))
+
+            return {
+                message: "Licencia médica removida correctamente"
+            }
+
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new InternalServerErrorException(
+                `Ocurrió un error con el sistema: ${error}`,
+            );
+        }
     }
-  }
+
+    async obtenerLicenciasEmpleado(empleadoId: number) {
+        try {
+            const licencias = await this.db
+                .select()
+                .from(LicenciaMedicaTable)
+                .where(
+                    and(
+                        eq(LicenciaMedicaTable.empleado_id, empleadoId),
+                        eq(LicenciaMedicaTable.estado_registro, true)
+                    )
+                )
+
+            return licencias
+
+        } catch (error) {
+            throw new InternalServerErrorException(
+                `Ocurrió un error con el sistema: ${error}`
+            );
+        }
+    }
 }

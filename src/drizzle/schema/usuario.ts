@@ -38,14 +38,12 @@ export const UsuarioTable = pgTable('usuario', {
   token_expiry_email: timestamp('token_expiry_email'),
   token_verificacion_password: varchar('token_verificacion_password', { length: 255 }),
   token_expiry_password: timestamp('token_expiry_password'),
-  
   // Campos para 2FA con TOTP (Google Authenticator)
   auth_two_factor: boolean('auth_two_factor').default(false).notNull(),
   two_factor_secret: varchar('two_factor_secret', { length: 255 }),
 
   // Códigos de recuperación para 2FA
   recovery_codes: text('recovery_codes'),
-  
   estado_registro: boolean('estado_registro').default(true).notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at')
