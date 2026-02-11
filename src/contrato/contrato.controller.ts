@@ -1,30 +1,14 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseBoolPipe,
-  ParseIntPipe,
-  Patch,
-  Post,
-  Put,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Put, Query, } from '@nestjs/common';
 import { ContratoService } from './contrato.service';
 import { PaginationDto } from 'src/common';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
-import {
-  ApiBody,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags} from '@nestjs/swagger';
 
+@ApiTags('Contratos')
 @Controller('contratos')
 export class ContratoController {
-  constructor(private readonly contratoService: ContratoService) {}
+  constructor(private readonly contratoService: ContratoService) { }
 
   @Get()
   @ApiOperation({

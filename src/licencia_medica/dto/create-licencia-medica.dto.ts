@@ -1,17 +1,11 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
-import { IsDate, IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, MaxLength } from "class-validator";
+import { IsDate, IsEnum, IsInt, IsNotEmpty, IsPositive, IsString, MaxLength } from "class-validator";
 
 export enum TipoLicenciaEnum {
     DESCANSO_MEDICO = 'descanso_medico',
     LICENCIA_MATERNIDAD = 'licencia_maternidad',
     LICENCIA_PATERNIDAD = 'licencia_paternidad',
-}
-
-export enum EstadoLicenciaEnum {
-    PENDIENTE = 'pendiente',
-    APROBADO = 'aprobado',
-    RECHAZADO = 'rechazado',
 }
 
 export class CreateLicenciaMedicaDto {
@@ -97,25 +91,4 @@ export class CreateLicenciaMedicaDto {
     @IsInt({ message: 'Los días de descanso deben ser un número entero.' })
     @IsPositive({ message: 'Los días de descanso deben ser mayor a cero.' })
     dias_descanso: number;
-
-
-    @ApiProperty({
-        description: 'Estado de la licencia médica',
-        enum: EstadoLicenciaEnum,
-        example: EstadoLicenciaEnum.PENDIENTE,
-        required: false,
-    })
-    @IsOptional()
-    @IsEnum(EstadoLicenciaEnum, { message: 'Estado de licencia inválido.' })
-    estado?: EstadoLicenciaEnum;
-
-    @ApiProperty({
-        description: 'Observaciones adicionales sobre la licencia',
-        example: 'Requiere seguimiento',
-        required: false,
-    })
-    @IsOptional()
-    @Transform(({ value }) => value?.trim())
-    @IsString({ message: 'Las observaciones deben ser texto.' })
-    observaciones?: string;
 }

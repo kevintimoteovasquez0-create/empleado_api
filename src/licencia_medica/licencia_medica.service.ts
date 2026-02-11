@@ -1,11 +1,11 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { and, getTableColumns, count, eq } from 'drizzle-orm';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { DrizzleService } from 'src/drizzle/drizzle.service';
 import { LicenciaMedicaTable } from 'src/drizzle/schema/licencia_medica';
 import { EmpleadoTable } from 'src/drizzle/schema/empleado';
 import { CreateLicenciaMedicaDto } from './dto/create-licencia-medica.dto';
-import { UpdateLicenciaMedicaDto } from './dto/update-licencia-medica.dto';
+import { UpdateEstadoLicenciaMedicaDto} from './dto/update-estado-licencia-medica.dto';
 
 @Injectable()
 export class LicenciaMedicaService {
@@ -63,6 +63,7 @@ export class LicenciaMedicaService {
             }
 
         } catch (error) {
+            if (error instanceof HttpException) throw error;
             throw new InternalServerErrorException(
                 `Ocurrió un error con el sistema: ${error}`,
             );
@@ -99,9 +100,7 @@ export class LicenciaMedicaService {
             return response
 
         } catch (error) {
-            if (error instanceof NotFoundException) {
-                throw error;
-            }
+            if (error instanceof HttpException) throw error;
             throw new InternalServerErrorException(
                 `Ocurrió un error con el sistema: ${error}`,
             );
@@ -126,13 +125,13 @@ export class LicenciaMedicaService {
         }
     }
 
-    async updateLicenciaMedica(id: number, updateLicenciaMedicaDto: UpdateLicenciaMedicaDto) {
+    async actualizarEstadoLicencia(id: number, updateEstadoLicenciaMedicaDto: UpdateEstadoLicenciaMedicaDto) {
         try {
             await this.findLicenciaMedicaById(id, true)
 
             await this.db
                 .update(LicenciaMedicaTable)
-                .set({ ...updateLicenciaMedicaDto })
+                .set({ ...updateEstadoLicenciaMedicaDto })
                 .where(eq(LicenciaMedicaTable.id, id))
 
             return {
@@ -140,9 +139,7 @@ export class LicenciaMedicaService {
             }
 
         } catch (error) {
-            if (error instanceof NotFoundException) {
-                throw error;
-            }
+            if (error instanceof HttpException) throw error;
             throw new InternalServerErrorException(
                 `Ocurrió un error con el sistema: ${error}`,
             );
@@ -164,9 +161,7 @@ export class LicenciaMedicaService {
             }
 
         } catch (error) {
-            if (error instanceof NotFoundException) {
-                throw error;
-            }
+            if (error instanceof HttpException) throw error;
             throw new InternalServerErrorException(
                 `Ocurrió un error con el sistema: ${error}`,
             );
@@ -188,9 +183,7 @@ export class LicenciaMedicaService {
             }
 
         } catch (error) {
-            if (error instanceof NotFoundException) {
-                throw error;
-            }
+            if (error instanceof HttpException) throw error;
             throw new InternalServerErrorException(
                 `Ocurrió un error con el sistema: ${error}`,
             );
@@ -212,6 +205,7 @@ export class LicenciaMedicaService {
             return licencias
 
         } catch (error) {
+            if (error instanceof HttpException) throw error;
             throw new InternalServerErrorException(
                 `Ocurrió un error con el sistema: ${error}`
             );

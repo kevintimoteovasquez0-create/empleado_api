@@ -37,6 +37,7 @@ export class CreateContratoDto {
     example: 12,
     type: Number,
   })
+  @Type(() => Number)
   @IsNotEmpty({ message: 'El empleado es obligatorio.' })
   @IsInt({ message: 'El empleado debe ser un número entero.' })
   @IsPositive({ message: 'El empleado debe ser mayor a cero.' })
@@ -91,6 +92,7 @@ export class CreateContratoDto {
     type: Number,
     minimum: 0.01,
   })
+  @Type(() => Number)
   @IsNotEmpty({ message: 'El sueldo bruto es obligatorio.' })
   @IsPositive({ message: 'El sueldo bruto debe ser mayor a cero.' })
   sueldo_bruto: number;

@@ -10,27 +10,8 @@ import {
   Max,
   MaxLength,
   Min,
-  ValidateIf,
 } from 'class-validator';
-
-export enum EstadoPostulacionEnumDto {
-  PENDIENTE = 'PENDIENTE',
-  REVISADO = 'REVISADO',
-  PRESELECCIONADO = 'PRESELECCIONADO',
-  NO_APTO = 'NO_APTO',
-  APROBADO = 'APROBADO',
-}
-
 export class CreatePostulacionDto {
-  @ApiProperty({
-    description: 'ID de la convocatoria a la que postula',
-    example: 12,
-    type: Number,
-  })
-  @IsNotEmpty({ message: 'La convocatoria es obligatoria.' })
-  @IsInt({ message: 'La convocatoria debe ser un número entero.' })
-  @Min(1, { message: 'La convocatoria debe ser mayor a cero.' })
-  convocatoria_id: number;
 
   @ApiProperty({
     description: 'Número de DNI del postulante',
@@ -77,19 +58,7 @@ export class CreatePostulacionDto {
   @Transform(({ value }) => value?.trim())
   @IsString({ message: 'El teléfono debe ser texto.' })
   @MaxLength(20, { message: 'El teléfono no puede superar 20 caracteres.' })
-  telefono?: string;
-
-  @ApiProperty({
-    description: 'Número de WhatsApp del postulante',
-    example: '987654321',
-    maxLength: 20,
-    required: false,
-  })
-  @IsOptional()
-  @Transform(({ value }) => value?.trim())
-  @IsString({ message: 'El WhatsApp debe ser texto.' })
-  @MaxLength(20, { message: 'El WhatsApp no puede superar 20 caracteres.' })
-  whatsapp?: string;
+  telefono: string;
 
   @ApiProperty({
     description: 'Correo electrónico del postulante',
@@ -112,7 +81,7 @@ export class CreatePostulacionDto {
   @Transform(({ value }) => value?.trim())
   @IsString({ message: 'La experiencia debe ser texto.' })
   @MaxLength(50, { message: 'La experiencia no puede superar 50 caracteres.' })
-  experiencia?: string;
+  experiencia: string;
 
   @ApiProperty({
     description: 'Motivo por el cual postula',
@@ -122,7 +91,7 @@ export class CreatePostulacionDto {
   @IsOptional()
   @Transform(({ value }) => value?.trim())
   @IsString({ message: 'El motivo debe ser texto.' })
-  motivo?: string;
+  motivo: string;
 
   @ApiProperty({
     description: 'Ruta del archivo CV en PDF',
@@ -131,31 +100,5 @@ export class CreatePostulacionDto {
   })
   @IsOptional()
   @IsString({ message: 'La ruta del CV debe ser texto.' })
-  cv_pdf?: string;
-
-  @ApiProperty({
-    description: 'Estado de la postulación',
-    enum: EstadoPostulacionEnumDto,
-    example: EstadoPostulacionEnumDto.PENDIENTE,
-    required: false,
-  })
-  @IsOptional()
-  @IsEnum(EstadoPostulacionEnumDto, {
-    message: 'Estado de postulación inválido.',
-  })
-  estado?: EstadoPostulacionEnumDto;
-
-  @ApiProperty({
-    description: 'Puntaje obtenido por el postulante (0-100)',
-    example: 85,
-    type: Number,
-    minimum: 0,
-    maximum: 100,
-    required: false,
-  })
-  @IsOptional()
-  @IsInt({ message: 'El puntaje debe ser un número entero.' })
-  @Min(0, { message: 'El puntaje mínimo es 0.' })
-  @Max(100, { message: 'El puntaje máximo es 100.' })
-  puntaje?: number;
+  cv_pdf: string;
 }

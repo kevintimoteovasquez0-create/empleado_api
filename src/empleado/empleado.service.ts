@@ -1,12 +1,13 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { and, getTableColumns } from 'drizzle-orm';
 import { count, eq } from 'drizzle-orm';
 import { PaginationDto } from 'src/common';
 import { DrizzleService } from 'src/drizzle/drizzle.service';
 import { AreaTable } from 'src/drizzle/schema/area';
 import { EmpleadoTable } from 'src/drizzle/schema/empleado';
-import { CreateEmpleadoDto, DocumentoEnumDto } from './dto/create-empleado.dto';
+import { CreateEmpleadoDto } from './dto/create-empleado.dto';
 import { UpdateEmpleadoDto } from './dto/update-empleado.dto';
+import { number } from 'joi';
 
 @Injectable()
 export class EmpleadoService {
@@ -20,7 +21,7 @@ export class EmpleadoService {
     return this.drizzleService.getDb();
   }
 
-  async findAllEmpleados(paginationDto: PaginationDto, estado: boolean) {
+  async findAllEmpleados(paginationDto: PaginationDto, estado: boolean, areaID?: number) {
     try {
 
       const { page, limit } = paginationDto
@@ -32,38 +33,51 @@ export class EmpleadoService {
 
       const getAllRegistrosArea = Number(total)
 
-      const finalPage = page ?? 1
-      const finalLimit = limit ?? 10
+      const pageActual = page ?? 1
+      const limitActual = limit ?? 10
 
-      const numberPages = Math.ceil(getAllRegistrosArea / finalLimit)
+      const numberPages = Math.ceil(getAllRegistrosArea / limitActual)
 
       const { area_id, ...restoCamposArea } = getTableColumns(EmpleadoTable)
+
+      const condiciones = [
+        eq(EmpleadoTable.estado_registro, estado),
+      ]
+
+      if(areaID){
+        condiciones.push(eq(EmpleadoTable.area_id, areaID))
+      }
 
       const responseEmpleados = await this.db
         .select({
           ...restoCamposArea,
-          area: {
-            id: AreaTable.id,
-            nombre: AreaTable.nombre
-          }
+          ...(!areaID && {
+            area: {
+              id: AreaTable.id,
+              nombre: AreaTable.nombre
+            }
+          })
         })
         .from(EmpleadoTable)
         .innerJoin(AreaTable, eq(EmpleadoTable.area_id, AreaTable.id))
-        .where(eq(EmpleadoTable.estado_registro, estado))
-        .limit(finalLimit)
-        .offset((finalPage - 1) * finalLimit)
+        .where(and(
+          ...condiciones
+        ))
+        .limit(limitActual)
+        .offset((pageActual - 1) * limitActual)
 
       return {
         data: responseEmpleados,
         pagination: {
-          tota: getAllRegistrosArea,
-          page: finalPage,
-          limit: finalLimit,
-          finalPage: numberPages
+          total: getAllRegistrosArea,
+          page: pageActual,
+          limit: limitActual,
+          pageActual: numberPages
         }
       }
 
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -99,6 +113,7 @@ export class EmpleadoService {
       return response
 
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -117,6 +132,7 @@ export class EmpleadoService {
       }
 
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -137,6 +153,7 @@ export class EmpleadoService {
       }
 
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -158,6 +175,7 @@ export class EmpleadoService {
       }
 
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -179,6 +197,7 @@ export class EmpleadoService {
       }
 
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -186,31 +205,11 @@ export class EmpleadoService {
   }
 
 
-  async actualizarAuditoriaProgreso(){
+  async actualizarAuditoriaProgreso() {
 
   }
 
   //Funciones extras
-
-  async obtenerEmpleadoArea(areaID: number) {
-    try {
-      const [response] = await this.db
-        .select({
-          id: EmpleadoTable.id,
-          nombre: EmpleadoTable.nombres,
-          apellido: EmpleadoTable.apellidos
-        })
-        .from(EmpleadoTable)
-        .where(eq(EmpleadoTable.area_id, areaID))
-
-      return response
-
-    } catch (error) {
-      throw new InternalServerErrorException(
-        `Ocurrió un error con el sistema: ${error}`
-      );
-    }
-  }
 
   // async obtenerDocumentosEmpleados(id: number) {
   //   try {

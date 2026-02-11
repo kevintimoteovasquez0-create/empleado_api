@@ -1,14 +1,11 @@
 import { Module } from '@nestjs/common';
 import { PostulacionService } from './postulacion.service';
-import {
-  PostulacionController,
-  PostulacionConvocatoriaController,
-} from './postulacion.controller';
+import {PostulacionController} from './postulacion.controller';
 import { DrizzleModule } from 'src/drizzle/drizzle.module';
 
 @Module({
   imports: [DrizzleModule],
-  controllers: [PostulacionController, PostulacionConvocatoriaController],
+  controllers: [PostulacionController],
   providers: [PostulacionService],
   exports: [PostulacionService],
 })

@@ -18,8 +18,8 @@ export class ReniecService {
           {
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${this.TOKEN_RENIEC_DNI}`, // Reemplaza con tu token real
-            },
+              'Authorization': `Bearer ${this.TOKEN_RENIEC_DNI}`
+            }
           }
         )
       )

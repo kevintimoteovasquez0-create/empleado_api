@@ -116,7 +116,6 @@ export class CreateEmpleadoDto {
   @IsNotEmpty({ message: "La fecha de ingreso es un campo requerido." })
   fecha_ingreso: Date;
 
-
   @ApiProperty({
     description: 'Fecha de nacimiento del empleado',
     example: '1998-05-20',

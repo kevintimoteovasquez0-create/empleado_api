@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { DrizzleService } from 'src/drizzle/drizzle.service';
 import { PaginationConvocatoriaDto } from './dto/pagination-convocatoria.dto';
 import { ConvocatoriaTable } from 'src/drizzle/schema/convocatoria';
@@ -7,11 +7,17 @@ import { CreateConvocatoriaDto } from './dto/create-convocatoria.dto';
 import { UsuarioTable } from 'src/drizzle/schema/usuario';
 import { alias } from 'drizzle-orm/pg-core';
 import { AreaTable } from 'src/drizzle/schema/area';
+import { CreatePostulacionDto } from 'src/postulacion/dto/create-postulacion.dto';
+import { PostulacionService } from 'src/postulacion/postulacion.service';
+import { PaginationDto } from 'src/common';
 
 @Injectable()
 export class ConvocatoriaService {
 
-  constructor(private readonly drizzleService: DrizzleService) { }
+  constructor(
+    private readonly drizzleService: DrizzleService,
+    private readonly postulacionService: PostulacionService
+  ) { }
 
   private get db() {
     return this.drizzleService.getDb()
@@ -159,20 +165,20 @@ export class ConvocatoriaService {
 
       const { remuneracion, es_a_convenir } = createConvocatoriaDto;
 
-      const remuneraciones = remuneracion === 0 
-      ? null 
-      : remuneracion;
-    
+      const remuneraciones = remuneracion === 0
+        ? null
+        : remuneracion;
+
       if (!es_a_convenir && (remuneraciones == null || remuneraciones <= 0)) {
-          throw new BadRequestException(
-              'La remuneración es obligatoria cuando no es a convenir'
-          );
+        throw new BadRequestException(
+          'La remuneración es obligatoria cuando no es a convenir'
+        );
       }
-      
+
       if (es_a_convenir && remuneraciones != null) {
-          throw new BadRequestException(
-              'No se debe especificar remuneración cuando es a convenir'
-          );
+        throw new BadRequestException(
+          'No se debe especificar remuneración cuando es a convenir'
+        );
       }
 
       await this.db
@@ -198,21 +204,21 @@ export class ConvocatoriaService {
 
       const { remuneracion, es_a_convenir } = updateConvocatoriaDto;
 
-      const remuneraciones = remuneracion === 0 
-      ? null 
-      : remuneracion;
-    
+      const remuneraciones = remuneracion === 0
+        ? null
+        : remuneracion;
+
       // Validación de negocio
       if (!es_a_convenir && (remuneraciones == null || remuneraciones <= 0)) {
-          throw new BadRequestException(
-              'La remuneración es obligatoria cuando no es a convenir'
-          );
+        throw new BadRequestException(
+          'La remuneración es obligatoria cuando no es a convenir'
+        );
       }
-      
+
       if (es_a_convenir && remuneraciones != null) {
-          throw new BadRequestException(
-              'No se debe especificar remuneración cuando es a convenir'
-          );
+        throw new BadRequestException(
+          'No se debe especificar remuneración cuando es a convenir'
+        );
       }
 
       await this.db
@@ -259,7 +265,7 @@ export class ConvocatoriaService {
     }
   }
 
-  async restoreConvocatoria(id: number){
+  async restoreConvocatoria(id: number) {
     try {
 
       await this.findOneConvocatoriaById(id, false)
@@ -278,8 +284,32 @@ export class ConvocatoriaService {
         message: `La convocatoria con id ${id} ha sido restaurada correctamente`
       }
 
-    } catch(error) {
+    } catch (error) {
       throw new InternalServerErrorException(error)
+    }
+  }
+
+  //Funciones extras
+
+  async convocatoriaPostular(id: number, createPostulacionDto: CreatePostulacionDto) {
+    try {
+      await this.findOneConvocatoriaById(id, true)
+      return this.postulacionService.createPostulacion(id, createPostulacionDto)
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(error)
+    }
+  }
+
+  async obtenerPostulacionesConvocatorias(id: number, estado: boolean, paginationDto: PaginationDto) {
+    try {
+      await this.findOneConvocatoriaById(id, true)
+      return this.postulacionService.findAllPostulaciones(paginationDto, estado, id)
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        `Ocurrió un error con el sistema: ${error}`,
+      );
     }
   }
 

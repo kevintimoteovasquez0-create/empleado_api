@@ -206,8 +206,39 @@ export class AreaController {
     description: 'Área no encontrada',
   })
   obtenerEmpleadosAreas(
-    @Param("id", ParseIntPipe) id: number
+    @Param("id", ParseIntPipe) id: number,
+    @Query() paginationDto: PaginationDto,
+    @Query("estado", ParseBoolPipe) estado: boolean
   ) {
-    return this.areaService.obtenerEmpleadosAreas(id)
+    const estadoActual = estado ?? true
+    return this.areaService.obtenerEmpleadosAreas(id, estadoActual, paginationDto)
+  }
+
+  @Get(":id/postulacion")
+  @ApiOperation({
+    summary: 'Obtener postulaciones de un área',
+    description: 'Retorna la lista de postulaciones asociados a un área.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'ID del área',
+    example: 5,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de postulaciones obtenida exitosamente',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Área no encontrada',
+  })
+  obtenerPostulacionesAreas(
+    @Param("id", ParseIntPipe) id: number,
+    @Query() paginationDto: PaginationDto,
+    @Query("estado", ParseBoolPipe) estado: boolean
+  ) {
+    const estadoActual = estado ?? true
+    return this.areaService.obtenerPostulacionesAreas(id, estadoActual, paginationDto)
   }
 }

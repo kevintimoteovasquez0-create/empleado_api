@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { and, getTableColumns } from 'drizzle-orm';
 import { count, eq } from 'drizzle-orm';
 import { PaginationDto } from 'src/common';
@@ -8,13 +8,15 @@ import { UsuarioTable } from 'src/drizzle/schema/usuario';
 import { EmpleadoService } from 'src/empleado/empleado.service';
 import { CreateAreaDto } from './dto/create-area.dto';
 import { UpdateAreaDto } from './dto/update-area.dto';
+import { PostulacionService } from 'src/postulacion/postulacion.service';
 
 @Injectable()
 export class AreaService {
 
   constructor(
     private readonly drizzleService: DrizzleService,
-    private readonly empleadoService: EmpleadoService
+    private readonly empleadoService: EmpleadoService,
+    private readonly postulacionService: PostulacionService
   ) { }
 
   private get db() {
@@ -65,6 +67,7 @@ export class AreaService {
       }
 
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -89,7 +92,8 @@ export class AreaService {
         .where(
           and(
             eq(AreaTable.id, id),
-            eq(AreaTable.estado_registro, estado))
+            eq(AreaTable.estado_registro, estado)
+          )
         )
         .limit(1)
 
@@ -100,6 +104,7 @@ export class AreaService {
       return response
 
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -118,6 +123,7 @@ export class AreaService {
       }
 
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -138,6 +144,7 @@ export class AreaService {
       }
 
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -159,6 +166,7 @@ export class AreaService {
       }
 
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -180,6 +188,7 @@ export class AreaService {
       }
 
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -188,11 +197,24 @@ export class AreaService {
 
   //Funciones extras
 
-  async obtenerEmpleadosAreas(id: number) {
+  async obtenerEmpleadosAreas(id: number, estado: boolean, paginationDto: PaginationDto) {
     try {
       await this.findAreasById(id, true)
-      return this.empleadoService.obtenerEmpleadoArea(id)
+      return this.empleadoService.findAllEmpleados(paginationDto, estado, id)
     } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        `Ocurrió un error con el sistema: ${error}`,
+      );
+    }
+  }
+
+  async obtenerPostulacionesAreas(id: number, estado: boolean, paginationDto: PaginationDto) {
+    try {
+      await this.findAreasById(id, true)
+      return this.postulacionService.findAllPostulaciones(paginationDto, estado, id)
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );

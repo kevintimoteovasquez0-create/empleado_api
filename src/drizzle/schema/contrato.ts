@@ -25,7 +25,7 @@ export const EstadoContratoEnum = pgEnum('estado_contrato', [
   'TERMINADO',
 ]);
 
-export const contrato = pgTable('contrato', {
+export const ContratoTable = pgTable('contrato', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   empleado_id: integer('empleado_id')
     .references(() => EmpleadoTable.id)

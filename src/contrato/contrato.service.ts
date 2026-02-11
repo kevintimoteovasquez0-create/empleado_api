@@ -9,13 +9,13 @@ import { count, eq } from 'drizzle-orm';
 import { PaginationDto } from 'src/common';
 import { DrizzleService } from 'src/drizzle/drizzle.service';
 import { EmpleadoTable } from 'src/drizzle/schema/empleado';
-import { contrato } from 'src/drizzle/schema/contrato';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
+import { ContratoTable } from 'src/drizzle/schema/contrato';
 
 @Injectable()
 export class ContratoService {
-  constructor(private readonly drizzleService: DrizzleService) {}
+  constructor(private readonly drizzleService: DrizzleService) { }
 
   private get db() {
     return this.drizzleService.getDb();
@@ -27,8 +27,8 @@ export class ContratoService {
 
       const [{ total }] = await this.db
         .select({ total: count() })
-        .from(contrato)
-        .where(eq(contrato.estado_registro, estado));
+        .from(ContratoTable)
+        .where(eq(ContratoTable.estado_registro, estado));
 
       const getAllRegistrosContratos = Number(total);
 
@@ -37,7 +37,7 @@ export class ContratoService {
 
       const numberPages = Math.ceil(getAllRegistrosContratos / finalLimit);
 
-      const { empleado_id, ...restoCamposContrato } = getTableColumns(contrato);
+      const { empleado_id, ...restoCamposContrato } = getTableColumns(ContratoTable);
 
       const responseContratos = await this.db
         .select({
@@ -48,9 +48,9 @@ export class ContratoService {
             apellidos: EmpleadoTable.apellidos,
           },
         })
-        .from(contrato)
-        .innerJoin(EmpleadoTable, eq(contrato.empleado_id, EmpleadoTable.id))
-        .where(eq(contrato.estado_registro, estado))
+        .from(ContratoTable)
+        .innerJoin(EmpleadoTable, eq(ContratoTable.empleado_id, EmpleadoTable.id))
+        .where(eq(ContratoTable.estado_registro, estado))
         .limit(finalLimit)
         .offset((finalPage - 1) * finalLimit);
 
@@ -72,7 +72,7 @@ export class ContratoService {
 
   async findContratoById(id: number, estado: boolean) {
     try {
-      const { empleado_id, ...restoCamposContrato } = getTableColumns(contrato);
+      const { empleado_id, ...restoCamposContrato } = getTableColumns(ContratoTable);
 
       const [response] = await this.db
         .select({
@@ -83,9 +83,9 @@ export class ContratoService {
             apellidos: EmpleadoTable.apellidos,
           },
         })
-        .from(contrato)
-        .innerJoin(EmpleadoTable, eq(contrato.empleado_id, EmpleadoTable.id))
-        .where(and(eq(contrato.id, id), eq(contrato.estado_registro, estado)))
+        .from(ContratoTable)
+        .innerJoin(EmpleadoTable, eq(ContratoTable.empleado_id, EmpleadoTable.id))
+        .where(and(eq(ContratoTable.id, id), eq(ContratoTable.estado_registro, estado)))
         .limit(1);
 
       if (!response) {
@@ -94,7 +94,6 @@ export class ContratoService {
 
       return response;
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -103,28 +102,21 @@ export class ContratoService {
 
   async createContrato(createContratoDto: CreateContratoDto) {
     try {
-      // Validar que las fechas sean consistentes
-      if (
-        createContratoDto.fecha_fin &&
-        createContratoDto.fecha_inicio >= createContratoDto.fecha_fin
-      ) {
-        throw new BadRequestException(
-          'La fecha de fin debe ser posterior a la fecha de inicio.',
-        );
+
+      const { sueldo_bruto, fecha_inicio, fecha_fin, ...restoCamposContrato } = createContratoDto
+
+      if (fecha_fin && new Date(fecha_inicio) > new Date(fecha_fin)) {
+        throw new BadRequestException("La fecha inicio no puede ser mayor a la fecha fin")
       }
 
-      const valuesToInsert = {
-        ...createContratoDto,
-        fecha_inicio: createContratoDto.fecha_inicio
-          .toISOString()
-          .split('T')[0],
-        fecha_fin: createContratoDto.fecha_fin
-          ? createContratoDto.fecha_fin.toISOString().split('T')[0]
-          : null,
-        sueldo_bruto: createContratoDto.sueldo_bruto.toString(),
-      };
-
-      await this.db.insert(contrato).values(valuesToInsert);
+      await this.db
+        .insert(ContratoTable)
+        .values({
+          ...restoCamposContrato,
+          fecha_inicio: fecha_inicio.toISOString().split('T')[0],
+          fecha_fin: fecha_fin?.toISOString().split('T')[0],
+          sueldo_bruto: sueldo_bruto.toFixed(2)
+        });
 
       return {
         message: 'Contrato creado correctamente',
@@ -139,48 +131,37 @@ export class ContratoService {
 
   async updateContrato(id: number, updateContratoDto: UpdateContratoDto) {
     try {
-      // Validar que las fechas sean consistentes si se proporcionan
-      if (
-        updateContratoDto.fecha_fin &&
-        updateContratoDto.fecha_inicio &&
-        updateContratoDto.fecha_inicio >= updateContratoDto.fecha_fin
-      ) {
-        throw new BadRequestException(
-          'La fecha de fin debe ser posterior a la fecha de inicio.',
-        );
+
+      const dataContrato = await this.findContratoById(id, true);
+
+      const { sueldo_bruto, fecha_inicio, fecha_fin, ...restoCamposContrato } = updateContratoDto
+
+      const fecha_inicio_default = fecha_inicio ?? new Date(dataContrato.fecha_inicio)
+
+      const fecha_fin_default = fecha_fin ?? (dataContrato.fecha_fin ? new Date(dataContrato.fecha_fin) : null);
+
+      if (!fecha_fin_default) {
+        throw new BadRequestException("Fecha fin inválida");
       }
 
-      await this.findContratoById(id, true);
-
-      const valuesToUpdate: any = { ...updateContratoDto };
-      if (valuesToUpdate.fecha_inicio) {
-        valuesToUpdate.fecha_inicio = valuesToUpdate.fecha_inicio
-          .toISOString()
-          .split('T')[0];
-      }
-      if (valuesToUpdate.fecha_fin) {
-        valuesToUpdate.fecha_fin = valuesToUpdate.fecha_fin
-          .toISOString()
-          .split('T')[0];
-      }
-      if (valuesToUpdate.sueldo_bruto) {
-        valuesToUpdate.sueldo_bruto = valuesToUpdate.sueldo_bruto.toString();
+      if (fecha_fin && new Date(fecha_inicio_default) > new Date(fecha_fin_default)) {
+        throw new BadRequestException("La fecha inicio no puede ser mayor a la fecha fin")
       }
 
       await this.db
-        .update(contrato)
-        .set(valuesToUpdate)
-        .where(eq(contrato.id, id));
+        .update(ContratoTable)
+        .set({
+          ...restoCamposContrato,
+          fecha_inicio: fecha_inicio_default.toISOString().split('T')[0],
+          fecha_fin: fecha_fin_default.toISOString().split('T')[0],
+          sueldo_bruto: sueldo_bruto?.toFixed(2)
+        })
+        .where(eq(ContratoTable.id, id));
 
       return {
         message: 'Contrato actualizado correctamente',
       };
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      )
-        throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -192,9 +173,9 @@ export class ContratoService {
       await this.findContratoById(id, false);
 
       await this.db
-        .update(contrato)
+        .update(ContratoTable)
         .set({ estado_registro: true })
-        .where(eq(contrato.id, id));
+        .where(eq(ContratoTable.id, id));
 
       return {
         message: 'Contrato restaurado correctamente',
@@ -212,9 +193,9 @@ export class ContratoService {
       await this.findContratoById(id, true);
 
       await this.db
-        .update(contrato)
+        .update(ContratoTable)
         .set({ estado_registro: false })
-        .where(eq(contrato.id, id));
+        .where(eq(ContratoTable.id, id));
 
       return {
         message: 'Contrato removido correctamente',

@@ -1,47 +1,33 @@
-import {
-  Injectable,
-  NotFoundException,
-  InternalServerErrorException,
-  BadRequestException,
-} from '@nestjs/common';
+import {Injectable, NotFoundException, InternalServerErrorException, HttpException} from '@nestjs/common';
 import { and, getTableColumns } from 'drizzle-orm';
 import { count, eq } from 'drizzle-orm';
 import { PaginationDto } from 'src/common';
 import { DrizzleService } from 'src/drizzle/drizzle.service';
 import { ConvocatoriaTable } from 'src/drizzle/schema/convocatoria';
-import { postulacion } from 'src/drizzle/schema/postulacion';
 import { CreatePostulacionDto } from './dto/create-postulacion.dto';
-import { UpdatePostulacionDto } from './dto/update-postulacion.dto';
+import { PostulacionTable } from 'src/drizzle/schema/postulacion';
+import { AreaTable } from 'src/drizzle/schema/area';
+import { UpdateEstadoPostulacionDto } from './dto/update-estado-postulacion.dto';
 
 @Injectable()
 export class PostulacionService {
-  constructor(private readonly drizzleService: DrizzleService) {}
+  constructor(
+    private readonly drizzleService: DrizzleService,
+  ) { }
 
   private get db() {
     return this.drizzleService.getDb();
   }
 
-  async findAllPostulaciones(
-    paginationDto: PaginationDto,
-    estado: boolean,
-    estadoPostulacion?: string,
+  async findAllPostulaciones(paginationDto: PaginationDto, estado: boolean, areaId?: number, convocatoriaId?: number
   ) {
     try {
       const { page, limit } = paginationDto;
 
-      const whereConditions = [eq(postulacion.estado_registro, estado)];
-      if (estadoPostulacion) {
-        whereConditions.push(eq(postulacion.estado, estadoPostulacion as any));
-      }
-      const whereCondition =
-        whereConditions.length === 1
-          ? whereConditions[0]
-          : and(...whereConditions)!;
-
       const [{ total }] = await this.db
         .select({ total: count() })
-        .from(postulacion)
-        .where(whereCondition);
+        .from(PostulacionTable)
+        .where(eq(PostulacionTable.estado_registro, estado));
 
       const getAllRegistrosPostulaciones = Number(total);
 
@@ -50,24 +36,35 @@ export class PostulacionService {
 
       const numberPages = Math.ceil(getAllRegistrosPostulaciones / finalLimit);
 
-      const { convocatoria_id, ...restoCamposPostulacion } =
-        getTableColumns(postulacion);
+      const { convocatoria_id, ...restoCamposPostulacion } = getTableColumns(PostulacionTable);
+
+      const condiciones = [
+        eq(PostulacionTable.estado_registro, estado)
+      ]
+
+      if (areaId) {
+        condiciones.push(eq(AreaTable.id, areaId))
+      }
+
+      if (convocatoriaId) {
+        condiciones.push(eq(PostulacionTable.convocatoria_id, convocatoriaId))
+      }
 
       const responsePostulaciones = await this.db
         .select({
           ...restoCamposPostulacion,
-          convocatoria: {
-            id: ConvocatoriaTable.id,
-            cargo: ConvocatoriaTable.cargo,
-            descripcion: ConvocatoriaTable.descripcion,
-          },
+          ...(!convocatoriaId && {
+            convocatoria: {
+              id: ConvocatoriaTable.id,
+              cargo: ConvocatoriaTable.cargo,
+              descripcion: ConvocatoriaTable.descripcion,
+            }
+          })
         })
-        .from(postulacion)
-        .innerJoin(
-          ConvocatoriaTable,
-          eq(postulacion.convocatoria_id, ConvocatoriaTable.id),
-        )
-        .where(whereCondition)
+        .from(PostulacionTable)
+        .innerJoin(ConvocatoriaTable, eq(PostulacionTable.convocatoria_id, ConvocatoriaTable.id))
+        .innerJoin(AreaTable, eq(ConvocatoriaTable.area_id, AreaTable.id))
+        .where(and(...condiciones))
         .limit(finalLimit)
         .offset((finalPage - 1) * finalLimit);
 
@@ -81,6 +78,7 @@ export class PostulacionService {
         },
       };
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -90,7 +88,7 @@ export class PostulacionService {
   async findPostulacionById(id: number, estado: boolean) {
     try {
       const { convocatoria_id, ...restoCamposPostulacion } =
-        getTableColumns(postulacion);
+        getTableColumns(PostulacionTable);
 
       const [response] = await this.db
         .select({
@@ -101,13 +99,13 @@ export class PostulacionService {
             descripcion: ConvocatoriaTable.descripcion,
           },
         })
-        .from(postulacion)
-        .innerJoin(
-          ConvocatoriaTable,
-          eq(postulacion.convocatoria_id, ConvocatoriaTable.id),
-        )
+        .from(PostulacionTable)
+        .innerJoin(ConvocatoriaTable, eq(PostulacionTable.convocatoria_id, ConvocatoriaTable.id))
         .where(
-          and(eq(postulacion.id, id), eq(postulacion.estado_registro, estado)),
+          and(
+            eq(PostulacionTable.id, id),
+            eq(PostulacionTable.estado_registro, estado)
+          )
         )
         .limit(1);
 
@@ -119,136 +117,43 @@ export class PostulacionService {
 
       return response;
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
     }
   }
 
-  async createPostulacion(createPostulacionDto: CreatePostulacionDto) {
+  async createPostulacion(idConvocatoria: number, createPostulacionDto: CreatePostulacionDto) {
     try {
-      // Verificar que la convocatoria existe y está activa
-      const [convocatoria] = await this.db
-        .select({ id: ConvocatoriaTable.id })
-        .from(ConvocatoriaTable)
-        .where(
-          and(
-            eq(ConvocatoriaTable.id, createPostulacionDto.convocatoria_id),
-            eq(ConvocatoriaTable.estado_registro, true),
-          ),
-        )
-        .limit(1);
 
-      if (!convocatoria) {
-        throw new BadRequestException(
-          'La convocatoria especificada no existe o no está activa.',
-        );
-      }
-
-      await this.db.insert(postulacion).values(createPostulacionDto);
+      await this.db
+        .insert(PostulacionTable)
+        .values({
+          ...createPostulacionDto,
+          convocatoria_id: idConvocatoria
+        });
 
       return {
         message: 'Postulación creada correctamente',
       };
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
     }
   }
 
-  async createPostulacionParaConvocatoria(
-    convocatoriaId: number,
-    createPostulacionDto: Omit<CreatePostulacionDto, 'convocatoria_id'>,
-  ) {
+  async evaluarEstadoPostulacion(id: number, updateEstadoPostulacionDto: UpdateEstadoPostulacionDto) {
     try {
-      // Verificar que la convocatoria existe y está activa
-      const [convocatoria] = await this.db
-        .select({ id: ConvocatoriaTable.id })
-        .from(ConvocatoriaTable)
-        .where(
-          and(
-            eq(ConvocatoriaTable.id, convocatoriaId),
-            eq(ConvocatoriaTable.estado_registro, true),
-          ),
-        )
-        .limit(1);
-
-      if (!convocatoria) {
-        throw new BadRequestException(
-          'La convocatoria especificada no existe o no está activa.',
-        );
-      }
-
-      const valuesToInsert = {
-        ...createPostulacionDto,
-        convocatoria_id: convocatoriaId,
-      };
-
-      await this.db.insert(postulacion).values(valuesToInsert);
-
-      return {
-        message: 'Postulación creada correctamente para la convocatoria',
-      };
-    } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException(
-        `Ocurrió un error con el sistema: ${error}`,
-      );
-    }
-  }
-
-  async updatePostulacion(
-    id: number,
-    updatePostulacionDto: UpdatePostulacionDto,
-  ) {
-    try {
-      await this.findPostulacionById(id, true);
-
-      // Validar puntaje si se proporciona
-      if (
-        updatePostulacionDto.puntaje !== undefined &&
-        (updatePostulacionDto.puntaje < 0 || updatePostulacionDto.puntaje > 100)
-      ) {
-        throw new BadRequestException('El puntaje debe estar entre 0 y 100.');
-      }
-
+      await this.findPostulacionById(id, true)
       await this.db
-        .update(postulacion)
-        .set({ ...updatePostulacionDto })
-        .where(eq(postulacion.id, id));
-
-      return {
-        message: 'Postulación actualizada correctamente',
-      };
+        .update(PostulacionTable)
+        .set({ ...updateEstadoPostulacionDto })
+        .where(eq(PostulacionTable.id, id))
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      )
-        throw error;
-      throw new InternalServerErrorException(
-        `Ocurrió un error con el sistema: ${error}`,
-      );
-    }
-  }
-
-  async restorePostulacion(id: number) {
-    try {
-      await this.findPostulacionById(id, false);
-
-      await this.db
-        .update(postulacion)
-        .set({ estado_registro: true })
-        .where(eq(postulacion.id, id));
-
-      return {
-        message: 'Postulación restaurada correctamente',
-      };
-    } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );
@@ -260,15 +165,15 @@ export class PostulacionService {
       await this.findPostulacionById(id, true);
 
       await this.db
-        .update(postulacion)
+        .update(PostulacionTable)
         .set({ estado_registro: false })
-        .where(eq(postulacion.id, id));
+        .where(eq(PostulacionTable.id, id));
 
       return {
         message: 'Postulación removida correctamente',
       };
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
       );

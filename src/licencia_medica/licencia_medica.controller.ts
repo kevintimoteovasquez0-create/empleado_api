@@ -1,11 +1,11 @@
-import { Body, Controller, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { LicenciaMedicaService } from './licencia_medica.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { CreateLicenciaMedicaDto } from './dto/create-licencia-medica.dto';
-import { UpdateLicenciaMedicaDto } from './dto/update-licencia-medica.dto';
 import { ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { UpdateEstadoLicenciaMedicaDto } from './dto/update-estado-licencia-medica.dto';
 
-@ApiTags('Licencia Medica')
+@ApiTags('Licencias medicas')
 @Controller('licencia-medica')
 export class LicenciaMedicaController {
     constructor(private readonly licenciaMedicaService: LicenciaMedicaService) { }
@@ -101,34 +101,34 @@ export class LicenciaMedicaController {
 
     //--------------------------------------------------
 
-    @Put(":id")
+    @Patch(":id/estado")
     @ApiOperation({
-        summary: 'Actualizar una licencia médica',
-        description: 'Actualiza la información de una licencia médica existente.',
+        summary: 'Aprobar o rechazar una licencia médica',
+        description: 'Actualiza el estado de una licencia médica existente ademas de añadir opcionalmente algunas observaciones.',
     })
     @ApiParam({
         name: 'id',
         type: Number,
-        description: 'ID de la licencia médica a actualizar',
+        description: 'ID de la licencia médica cuyo estado se actualizará',
         example: 1,
     })
     @ApiBody({
-        type: UpdateLicenciaMedicaDto,
-        description: 'Datos que se pueden actualizar de la licencia médica',
+        type: UpdateEstadoLicenciaMedicaDto,
+        description: 'Objeto con el nuevo estado de la licencia',
     })
     @ApiResponse({
         status: 200,
-        description: 'Licencia médica actualizada correctamente',
+        description: 'Estado de la licencia médica actualizado correctamente',
     })
     @ApiResponse({
         status: 404,
         description: 'Licencia médica no encontrada',
     })
-    updateLicenciaMedica(
+    actualizarEstadoLicencia(
         @Param("id", ParseIntPipe) id: number,
-        @Body() updateLicenciaMedicaDto: UpdateLicenciaMedicaDto
+        @Body() updateEstadoLicenciaMedicaDto: UpdateEstadoLicenciaMedicaDto,
     ) {
-        return this.licenciaMedicaService.updateLicenciaMedica(id, updateLicenciaMedicaDto)
+        return this.licenciaMedicaService.actualizarEstadoLicencia(id, updateEstadoLicenciaMedicaDto);
     }
 
     //--------------------------------------------
@@ -163,7 +163,7 @@ export class LicenciaMedicaController {
     @Patch(":id/remove")
     @ApiOperation({
         summary: 'Eliminar licencia médica',
-        description: 'Desactiva (soft delete) una licencia médica del sistema.',
+        description: 'Desactiva una licencia médica del sistema.',
     })
     @ApiParam({
         name: 'id',

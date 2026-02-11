@@ -5,7 +5,7 @@ import {
   varchar,
   text,
   boolean,
-  timestamp,
+  timestamp
 } from 'drizzle-orm/pg-core';
 import { ConvocatoriaTable } from './convocatoria';
 
@@ -17,11 +17,9 @@ export const EstadoPostulacionEnum = pgEnum('estado_postulacion', [
   'APROBADO',
 ]);
 
-export const postulacion = pgTable('postulacion', {
+export const PostulacionTable = pgTable('postulacion', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  convocatoria_id: integer('convocatoria_id')
-    .references(() => ConvocatoriaTable.id)
-    .notNull(),
+  convocatoria_id: integer('convocatoria_id').references(() => ConvocatoriaTable.id).notNull(),
   dni: varchar('dni', { length: 20 }).notNull(),
   nombres: varchar('nombres', { length: 100 }).notNull(),
   apellidos: varchar('apellidos', { length: 100 }).notNull(),
@@ -32,7 +30,6 @@ export const postulacion = pgTable('postulacion', {
   motivo: text('motivo'),
   cv_pdf: text('cv_pdf'),
   estado: EstadoPostulacionEnum().default('PENDIENTE').notNull(),
-  puntaje: integer('puntaje').default(0),
   estado_registro: boolean('estado_registro').default(true).notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at')

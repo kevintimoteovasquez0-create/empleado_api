@@ -24,10 +24,10 @@ export const EmpleadoTable = pgTable("empleado",{
   direccion: varchar("direccion", {length: 255}).notNull(),
   distrito: varchar("distrito", {length: 100}).notNull(),
   estado_legajo: EstadoLegajoEnum().default("pendiente"),
-  auditoria_progreso: integer(),
+  auditoria_progreso: integer("auditoria_progreso"),
   estado_registro: boolean("estado_registro").default(true).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().$onUpdate(()=> new Date()).notNull(),
 }, (table)=> [
-  check("auditoria_progreso", sql`(${table.auditoria_progreso} >=1) and (${table.auditoria_progreso} <=100)`)
+  check("auditoria_progreso_check", sql`(${table.auditoria_progreso} >= 0) and (${table.auditoria_progreso} <=100)`)
 ])
