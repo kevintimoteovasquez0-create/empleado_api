@@ -1,13 +1,14 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { BadRequestException, Logger, ValidationPipe } from '@nestjs/common';
+import { AppModule } from './app.module';  //archivo que se creo dentro del proyecto ha sido importado aqui 
+import { BadRequestException, Logger, ValidationPipe } from '@nestjs/common';//importa herramientas de construccion
 import { envs } from './config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';//importo una herramienta suelta
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-async function bootstrap() {
+
+async function bootstrap() {  //incluiye el framework de diseño 
 
   const logger = new Logger('main-empresoftperu')
 
@@ -20,12 +21,12 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
-    exceptionFactory: (errors) => {
+    exceptionFactory: (errors) => {  // cuando resivas una lista de errores has lo siguiente
       const formattedErrors = errors.map((error) => ({
         field: error.property,
         error: error.constraints ? Object.values(error.constraints) : [],
       }));
-      return new BadRequestException({
+      return new BadRequestException({  //entrega el resultado final (el error ya transformado)
         statusCode: 400,
         message: 'Validation failed',
         errors: formattedErrors,

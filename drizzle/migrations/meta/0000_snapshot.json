@@ -1,5 +1,5 @@
 {
-  "id": "6ee513ff-67fe-4964-8d0a-dde7a6521a78",
+  "id": "f40f1584-fa55-4e94-9c1c-ed226eea045d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -67,8 +67,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.areaTrabajo": {
-      "name": "areaTrabajo",
+    "public.area": {
+      "name": "area",
       "schema": "",
       "columns": {
         "id": {
@@ -78,7 +78,7 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "areaTrabajo_id_seq",
+            "name": "area_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -99,6 +99,12 @@
           "type": "varchar(150)",
           "primaryKey": false,
           "notNull": true
+        },
+        "responsable_id": {
+          "name": "responsable_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "estado_registro": {
           "name": "estado_registro",
@@ -123,7 +129,143 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "area_responsable_id_usuario_id_fk": {
+          "name": "area_responsable_id_usuario_id_fk",
+          "tableFrom": "area",
+          "tableTo": "usuario",
+          "columnsFrom": [
+            "responsable_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.contrato": {
+      "name": "contrato",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "contrato_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "empleado_id": {
+          "name": "empleado_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "modalidad": {
+          "name": "modalidad",
+          "type": "modalidad_contrato",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_inicio": {
+          "name": "fecha_inicio",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_fin": {
+          "name": "fecha_fin",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archivo_pdf": {
+          "name": "archivo_pdf",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sueldo_bruto": {
+          "name": "sueldo_bruto",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "moneda": {
+          "name": "moneda",
+          "type": "moneda",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_contrato",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "observaciones": {
+          "name": "observaciones",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado_registro": {
+          "name": "estado_registro",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "contrato_empleado_id_empleado_id_fk": {
+          "name": "contrato_empleado_id_empleado_id_fk",
+          "tableFrom": "contrato",
+          "tableTo": "empleado",
+          "columnsFrom": [
+            "empleado_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -251,10 +393,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "convocatoria_area_id_areaTrabajo_id_fk": {
-          "name": "convocatoria_area_id_areaTrabajo_id_fk",
+        "convocatoria_area_id_area_id_fk": {
+          "name": "convocatoria_area_id_area_id_fk",
           "tableFrom": "convocatoria",
-          "tableTo": "areaTrabajo",
+          "tableTo": "area",
           "columnsFrom": [
             "area_id"
           ],
@@ -282,6 +424,346 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.documento_empleado": {
+      "name": "documento_empleado",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "documento_empleado_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "empleado_id": {
+          "name": "empleado_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requisito_id": {
+          "name": "requisito_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "archivo_pdf": {
+          "name": "archivo_pdf",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo_archivo": {
+          "name": "tipo_archivo",
+          "type": "tipo_archivo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_documento",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDIENTE'"
+        },
+        "observacion_texto": {
+          "name": "observacion_texto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_subida": {
+          "name": "fecha_subida",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "revisado_por": {
+          "name": "revisado_por",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_revision": {
+          "name": "fecha_revision",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado_registro": {
+          "name": "estado_registro",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "documento_empleado_empleado_id_empleado_id_fk": {
+          "name": "documento_empleado_empleado_id_empleado_id_fk",
+          "tableFrom": "documento_empleado",
+          "tableTo": "empleado",
+          "columnsFrom": [
+            "empleado_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "documento_empleado_requisito_id_requisito_documento_id_fk": {
+          "name": "documento_empleado_requisito_id_requisito_documento_id_fk",
+          "tableFrom": "documento_empleado",
+          "tableTo": "requisito_documento",
+          "columnsFrom": [
+            "requisito_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "documento_empleado_revisado_por_usuario_id_fk": {
+          "name": "documento_empleado_revisado_por_usuario_id_fk",
+          "tableFrom": "documento_empleado",
+          "tableTo": "usuario",
+          "columnsFrom": [
+            "revisado_por"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.empleado": {
+      "name": "empleado",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "empleado_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "area_id": {
+          "name": "area_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombres": {
+          "name": "nombres",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "apellidos": {
+          "name": "apellidos",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo_documento": {
+          "name": "tipo_documento",
+          "type": "tipo_documento",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numero_documento": {
+          "name": "numero_documento",
+          "type": "varchar(12)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cargo": {
+          "name": "cargo",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo_personal": {
+          "name": "tipo_personal",
+          "type": "tipo_personal",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_ingreso": {
+          "name": "fecha_ingreso",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_nacimiento": {
+          "name": "fecha_nacimiento",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telefono": {
+          "name": "telefono",
+          "type": "varchar(9)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email_corporativo": {
+          "name": "email_corporativo",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "direccion": {
+          "name": "direccion",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "distrito": {
+          "name": "distrito",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado_legajo": {
+          "name": "estado_legajo",
+          "type": "estado_legajo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'pendiente'"
+        },
+        "auditoria_progreso": {
+          "name": "auditoria_progreso",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado_registro": {
+          "name": "estado_registro",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "empleado_usuario_id_usuario_id_fk": {
+          "name": "empleado_usuario_id_usuario_id_fk",
+          "tableFrom": "empleado",
+          "tableTo": "usuario",
+          "columnsFrom": [
+            "usuario_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "empleado_area_id_area_id_fk": {
+          "name": "empleado_area_id_area_id_fk",
+          "tableFrom": "empleado",
+          "tableTo": "area",
+          "columnsFrom": [
+            "area_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "empleado_numero_documento_unique": {
+          "name": "empleado_numero_documento_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "numero_documento"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "auditoria_progreso_check": {
+          "name": "auditoria_progreso_check",
+          "value": "(\"empleado\".\"auditoria_progreso\" >= 0) and (\"empleado\".\"auditoria_progreso\" <=100)"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.empresa": {
@@ -465,6 +947,380 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.licencia_medica": {
+      "name": "licencia_medica",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "licencia_medica_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "empleado_id": {
+          "name": "empleado_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_licencia",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "diagnostico_cie10": {
+          "name": "diagnostico_cie10",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "doctor_tratante": {
+          "name": "doctor_tratante",
+          "type": "varchar(150)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cmp": {
+          "name": "cmp",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "archivo_sustento_pdf": {
+          "name": "archivo_sustento_pdf",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_inicio": {
+          "name": "fecha_inicio",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dias_descanso": {
+          "name": "dias_descanso",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_licencia",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'pendiente'"
+        },
+        "revisado_por": {
+          "name": "revisado_por",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_revision": {
+          "name": "fecha_revision",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observaciones": {
+          "name": "observaciones",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado_registro": {
+          "name": "estado_registro",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "licencia_medica_empleado_id_empleado_id_fk": {
+          "name": "licencia_medica_empleado_id_empleado_id_fk",
+          "tableFrom": "licencia_medica",
+          "tableTo": "empleado",
+          "columnsFrom": [
+            "empleado_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "licencia_medica_revisado_por_usuario_id_fk": {
+          "name": "licencia_medica_revisado_por_usuario_id_fk",
+          "tableFrom": "licencia_medica",
+          "tableTo": "usuario",
+          "columnsFrom": [
+            "revisado_por"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "dias_descanso_check": {
+          "name": "dias_descanso_check",
+          "value": "\"licencia_medica\".\"dias_descanso\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.postulacion": {
+      "name": "postulacion",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "postulacion_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "convocatoria_id": {
+          "name": "convocatoria_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dni": {
+          "name": "dni",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombres": {
+          "name": "nombres",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "apellidos": {
+          "name": "apellidos",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telefono": {
+          "name": "telefono",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "whatsapp": {
+          "name": "whatsapp",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "experiencia": {
+          "name": "experiencia",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "motivo": {
+          "name": "motivo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cv_pdf": {
+          "name": "cv_pdf",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_postulacion",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDIENTE'"
+        },
+        "estado_registro": {
+          "name": "estado_registro",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "postulacion_convocatoria_id_convocatoria_id_fk": {
+          "name": "postulacion_convocatoria_id_convocatoria_id_fk",
+          "tableFrom": "postulacion",
+          "tableTo": "convocatoria",
+          "columnsFrom": [
+            "convocatoria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.requisito_documento": {
+      "name": "requisito_documento",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "requisito_documento_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "es_obligatorio": {
+          "name": "es_obligatorio",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "aplica_para": {
+          "name": "aplica_para",
+          "type": "aplica_para",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden_visualizacion": {
+          "name": "orden_visualizacion",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado_registro": {
+          "name": "estado_registro",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -827,10 +1683,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "usuario_area_id_areaTrabajo_id_fk": {
-          "name": "usuario_area_id_areaTrabajo_id_fk",
+        "usuario_area_id_area_id_fk": {
+          "name": "usuario_area_id_area_id_fk",
           "tableFrom": "usuario",
-          "tableTo": "areaTrabajo",
+          "tableTo": "area",
           "columnsFrom": [
             "area_id"
           ],
@@ -864,6 +1720,33 @@
     }
   },
   "enums": {
+    "public.estado_contrato": {
+      "name": "estado_contrato",
+      "schema": "public",
+      "values": [
+        "ACTIVO",
+        "VENCIDO",
+        "RENOVADO",
+        "TERMINADO"
+      ]
+    },
+    "public.modalidad_contrato": {
+      "name": "modalidad_contrato",
+      "schema": "public",
+      "values": [
+        "CONVENIO_PRACTICAS",
+        "PLAZO_FIJO",
+        "INDETERMINADO"
+      ]
+    },
+    "public.moneda": {
+      "name": "moneda",
+      "schema": "public",
+      "values": [
+        "PEN",
+        "USD"
+      ]
+    },
     "public.modalidad": {
       "name": "modalidad",
       "schema": "public",
@@ -881,6 +1764,48 @@
         "PRAT"
       ]
     },
+    "public.estado_documento": {
+      "name": "estado_documento",
+      "schema": "public",
+      "values": [
+        "PENDIENTE",
+        "COMPLETO",
+        "OBSERVADO"
+      ]
+    },
+    "public.tipo_archivo": {
+      "name": "tipo_archivo",
+      "schema": "public",
+      "values": [
+        "pdf",
+        "img"
+      ]
+    },
+    "public.tipo_documento": {
+      "name": "tipo_documento",
+      "schema": "public",
+      "values": [
+        "dni",
+        "carnet_extranjeria"
+      ]
+    },
+    "public.estado_legajo": {
+      "name": "estado_legajo",
+      "schema": "public",
+      "values": [
+        "al_dia",
+        "pendiente",
+        "observado"
+      ]
+    },
+    "public.tipo_personal": {
+      "name": "tipo_personal",
+      "schema": "public",
+      "values": [
+        "planilla",
+        "practicante"
+      ]
+    },
     "public.estado_convocatoria": {
       "name": "estado_convocatoria",
       "schema": "public",
@@ -890,6 +1815,44 @@
         "PRESELECCIONADO",
         "RECHAZADO",
         "ACEPTADO"
+      ]
+    },
+    "public.estado_licencia": {
+      "name": "estado_licencia",
+      "schema": "public",
+      "values": [
+        "pendiente",
+        "aprobado",
+        "rechazado"
+      ]
+    },
+    "public.tipo_licencia": {
+      "name": "tipo_licencia",
+      "schema": "public",
+      "values": [
+        "descanso_medico",
+        "licencia_maternidad",
+        "licencia_paternidad"
+      ]
+    },
+    "public.estado_postulacion": {
+      "name": "estado_postulacion",
+      "schema": "public",
+      "values": [
+        "PENDIENTE",
+        "REVISADO",
+        "PRESELECCIONADO",
+        "NO_APTO",
+        "APROBADO"
+      ]
+    },
+    "public.aplica_para": {
+      "name": "aplica_para",
+      "schema": "public",
+      "values": [
+        "PLANILLA",
+        "PRACTICANTE",
+        "AMBOS"
       ]
     },
     "public.tipo_documento_usuario": {

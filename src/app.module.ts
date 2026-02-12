@@ -14,8 +14,7 @@ import { HistorialConvocatoriaModule } from './historial_convocatoria/historial_
 import { AreaModule } from './area/area.module';
 import { EmpleadoModule } from './empleado/empleado.module';
 import { LicenciaMedicaModule } from './licencia_medica/licencia_medica.module';
-import { DocumentoModule } from './documento/documento.module';
-import { DocumentoEmpleadoModule } from './documento_empleado/documento_empleado.module';
+import { RequisitoDocumentoModule } from './requisito_documento/requisito_documento.module';
 
 @Module({
   imports: [
@@ -30,7 +29,7 @@ import { DocumentoEmpleadoModule } from './documento_empleado/documento_empleado
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-    }), DrizzleModule, ConvocatoriaModule, HistorialConvocatoriaModule, AreaModule, EmpleadoModule, LicenciaMedicaModule, DocumentoModule, DocumentoEmpleadoModule
+    }), DrizzleModule, ConvocatoriaModule, HistorialConvocatoriaModule, AreaModule, EmpleadoModule, LicenciaMedicaModule, RequisitoDocumentoModule
   ],
   controllers: [],
   providers: [],
