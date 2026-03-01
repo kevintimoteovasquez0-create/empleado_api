@@ -146,7 +146,7 @@ export class EmpleadoService extends BaseDrizzleService{
         uniqueFields: [
           { field: "numero_documento", column: EmpleadoTable.numero_documento }
         ]
-      })
+      });
 
       await this.db
         .update(EmpleadoTable)
