@@ -117,7 +117,10 @@ export class EmpleadoService extends BaseDrizzleService{
 
       await this.db
         .insert(EmpleadoTable)
-        .values({ ...createEmpleadoDto })
+        .values({ ...createEmpleadoDto,
+        fecha_ingreso: new Date(createEmpleadoDto.fecha_ingreso),
+        fecha_nacimiento: new Date(createEmpleadoDto.fecha_nacimiento),
+        })
 
       return {
         message: "Área creada correctamente"
@@ -147,7 +150,14 @@ export class EmpleadoService extends BaseDrizzleService{
 
       await this.db
         .update(EmpleadoTable)
-        .set({ ...updateEmpleadosDto })
+        .set({ ...updateEmpleadosDto,
+          fecha_ingreso: updateEmpleadosDto.fecha_ingreso
+            ? new Date(updateEmpleadosDto.fecha_ingreso)
+            :undefined,
+          fecha_nacimiento: updateEmpleadosDto.fecha_nacimiento
+            ? new Date(updateEmpleadosDto.fecha_nacimiento)
+            :undefined,
+        })
         .where(eq(EmpleadoTable.id, id))
 
       return {
