@@ -117,14 +117,15 @@ export class EmpleadoService extends BaseDrizzleService{
 
       await this.db
         .insert(EmpleadoTable)
-        .values({ ...createEmpleadoDto,
-        fecha_ingreso: new Date(createEmpleadoDto.fecha_ingreso),
-        fecha_nacimiento: new Date(createEmpleadoDto.fecha_nacimiento),
+        .values({ 
+          ...createEmpleadoDto,
+          fecha_ingreso: new Date(createEmpleadoDto.fecha_ingreso),
+          fecha_nacimiento: new Date(createEmpleadoDto.fecha_nacimiento),
         });
 
       return {
         message: "Área creada correctamente"
-      }
+      };
 
     } catch (error) {
       if (error instanceof HttpException) throw error;
