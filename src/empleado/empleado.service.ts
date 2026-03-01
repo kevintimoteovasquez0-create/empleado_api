@@ -120,7 +120,7 @@ export class EmpleadoService extends BaseDrizzleService{
         .values({ ...createEmpleadoDto,
         fecha_ingreso: new Date(createEmpleadoDto.fecha_ingreso),
         fecha_nacimiento: new Date(createEmpleadoDto.fecha_nacimiento),
-        })
+        });
 
       return {
         message: "Área creada correctamente"
@@ -158,7 +158,7 @@ export class EmpleadoService extends BaseDrizzleService{
             ? new Date(updateEmpleadosDto.fecha_nacimiento)
             :undefined,
         })
-        .where(eq(EmpleadoTable.id, id))
+        .where(eq(EmpleadoTable.id, id));
 
       return {
         message: "Área actualizada correctamente"
