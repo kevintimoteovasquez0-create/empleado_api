@@ -105,9 +105,7 @@ export class EmpleadoService extends BaseDrizzleService{
 
   async createEmpleados(createEmpleadoDto: CreateEmpleadoDto) {
     try {
-      console.log("DTO recibido:", createEmpleadoDto); 
-      console.log("fecha_ingreso:", createEmpleadoDto.fecha_ingreso); 
-      console.log("fecha_nacimiento:", createEmpleadoDto.fecha_nacimiento);
+
       await this.validarUniqueService.validarDatosUnicos({
         dto: createEmpleadoDto,
         table: EmpleadoTable,
@@ -119,15 +117,11 @@ export class EmpleadoService extends BaseDrizzleService{
 
       await this.db
         .insert(EmpleadoTable)
-        .values({ 
-          ...createEmpleadoDto,
-          fecha_ingreso: new Date(createEmpleadoDto.fecha_ingreso + "T00:00:00"),
-          fecha_nacimiento: new Date(createEmpleadoDto.fecha_nacimiento + + "T00:00:00"),
-        });
+        .values({ ...createEmpleadoDto })
 
       return {
         message: "Área creada correctamente"
-      };
+      }
 
     } catch (error) {
       if (error instanceof HttpException) throw error;
@@ -149,19 +143,12 @@ export class EmpleadoService extends BaseDrizzleService{
         uniqueFields: [
           { field: "numero_documento", column: EmpleadoTable.numero_documento }
         ]
-      });
+      })
 
       await this.db
         .update(EmpleadoTable)
-        .set({ ...updateEmpleadosDto,
-          fecha_ingreso: updateEmpleadosDto.fecha_ingreso
-            ? new Date(updateEmpleadosDto.fecha_ingreso + "T00:00:00")
-            :undefined,
-          fecha_nacimiento: updateEmpleadosDto.fecha_nacimiento
-            ? new Date(updateEmpleadosDto.fecha_nacimiento + "T00:00:00")
-            :undefined,
-        })
-        .where(eq(EmpleadoTable.id, id));
+        .set({ ...updateEmpleadosDto })
+        .where(eq(EmpleadoTable.id, id))
 
       return {
         message: "Área actualizada correctamente"
