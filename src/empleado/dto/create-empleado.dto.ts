@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsDate, IsEmail, IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, Length, Matches, MaxLength, ValidateIf } from "class-validator";
+import { IsDateString, IsEmail, IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, Length, Matches, MaxLength, ValidateIf } from "class-validator";
 
 export enum DocumentoEnumDto {
   DNI = 'dni',
@@ -112,9 +112,9 @@ export class CreateEmpleadoDto {
     type: String,
     format: 'date',
   })
-  @IsDate({ message: "El formato de la fecha de ingreso no es válido." })
+  @IsDateString({}, { message: "El formato de la fecha de ingreso no es válido." })
   @IsNotEmpty({ message: "La fecha de ingreso es un campo requerido." })
-  fecha_ingreso: Date;
+  fecha_ingreso: string;
 
   @ApiProperty({
     description: 'Fecha de nacimiento del empleado',
@@ -122,9 +122,9 @@ export class CreateEmpleadoDto {
     type: String,
     format: 'date',
   })
-  @IsDate({ message: "El formato de la fecha de nacimiento no es válido." })
+  @IsDateString({}, { message: "El formato de la fecha de nacimiento no es válido." })
   @IsNotEmpty({ message: "La fecha de nacimiento es un campo requerido." })
-  fecha_nacimiento: Date;
+  fecha_nacimiento: string;
 
   @ApiProperty({
     description: 'Número de teléfono del empleado',
