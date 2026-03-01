@@ -124,6 +124,8 @@ export class EmpleadoService extends BaseDrizzleService{
       }
 
     } catch (error) {
+      console.error("Error real del posgres: ", error.message);
+      console.error("Dato enviado: ", createEmpleadoDto.fecha_ingreso);
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,

@@ -112,7 +112,7 @@ export class CreateEmpleadoDto {
     type: String,
     format: 'date',
   })
-  @IsDate( { message: "El formato de la fecha de ingreso no es válido." })
+  @IsDate({ message: "El formato de la fecha de ingreso no es válido." })
   @Type(() => Date)
   @IsNotEmpty({ message: "La fecha de ingreso es un campo requerido." })
   fecha_ingreso: Date;

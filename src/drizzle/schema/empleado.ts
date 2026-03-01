@@ -18,7 +18,10 @@ export const EmpleadoTable = pgTable("empleado",{
   cargo: varchar("cargo", {length: 100}).notNull(),
   tipo_personal: TipoPersonalEnum().notNull(),
   fecha_ingreso: timestamp("fecha_ingreso", { mode: 'date'}).notNull(),
-  fecha_nacimiento: timestamp("fecha_nacimiento", { mode: 'date'}).notNull(),
+  fecha_nacimiento: timestamp("fecha_nacimiento", { 
+    mode: 'date', 
+    precision: 3,
+  }).notNull(),
   telefono: varchar("telefono", {length: 9}).notNull(),
   email_corporativo: varchar("email_corporativo", {length: 100}).notNull(),
   direccion: varchar("direccion", {length: 255}).notNull(),
