@@ -112,6 +112,7 @@ export class CreateEmpleadoDto {
     type: String,
     format: 'date',
   })
+  @Transform(({ value }) => value ? new Date(value) : value)
   @IsDate({ message: "El formato de la fecha de ingreso no es válido." })
   @IsNotEmpty({ message: "La fecha de ingreso es un campo requerido." })
   fecha_ingreso: Date;
@@ -122,6 +123,7 @@ export class CreateEmpleadoDto {
     type: String,
     format: 'date',
   })
+  @Transform(({ value }) => value ? new Date(value) : value)
   @IsDate({ message: "El formato de la fecha de nacimiento no es válido." })
   @IsNotEmpty({ message: "La fecha de nacimiento es un campo requerido." })
   fecha_nacimiento: Date;

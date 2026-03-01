@@ -34,9 +34,7 @@ async function bootstrap() {  //incluiye el framework de diseño
     },
   }));
 
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true
-  }))
+
 
   const config = new DocumentBuilder()
     .setTitle('EMPRESOFT PERU SAC')
