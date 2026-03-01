@@ -105,7 +105,9 @@ export class EmpleadoService extends BaseDrizzleService{
 
   async createEmpleados(createEmpleadoDto: CreateEmpleadoDto) {
     try {
-
+      console.log("DTO recibido:", createEmpleadoDto); 
+      console.log("fecha_ingreso:", createEmpleadoDto.fecha_ingreso); 
+      console.log("fecha_nacimiento:", createEmpleadoDto.fecha_nacimiento);
       await this.validarUniqueService.validarDatosUnicos({
         dto: createEmpleadoDto,
         table: EmpleadoTable,
@@ -119,8 +121,8 @@ export class EmpleadoService extends BaseDrizzleService{
         .insert(EmpleadoTable)
         .values({ 
           ...createEmpleadoDto,
-          fecha_ingreso: new Date(createEmpleadoDto.fecha_ingreso),
-          fecha_nacimiento: new Date(createEmpleadoDto.fecha_nacimiento),
+          fecha_ingreso: new Date(createEmpleadoDto.fecha_ingreso + "T00:00:00"),
+          fecha_nacimiento: new Date(createEmpleadoDto.fecha_nacimiento + + "T00:00:00"),
         });
 
       return {
@@ -153,10 +155,10 @@ export class EmpleadoService extends BaseDrizzleService{
         .update(EmpleadoTable)
         .set({ ...updateEmpleadosDto,
           fecha_ingreso: updateEmpleadosDto.fecha_ingreso
-            ? new Date(updateEmpleadosDto.fecha_ingreso)
+            ? new Date(updateEmpleadosDto.fecha_ingreso + "T00:00:00")
             :undefined,
           fecha_nacimiento: updateEmpleadosDto.fecha_nacimiento
-            ? new Date(updateEmpleadosDto.fecha_nacimiento)
+            ? new Date(updateEmpleadosDto.fecha_nacimiento + "T00:00:00")
             :undefined,
         })
         .where(eq(EmpleadoTable.id, id));
