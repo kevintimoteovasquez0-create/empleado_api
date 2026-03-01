@@ -14,10 +14,10 @@ export const EmpleadoTable = pgTable("empleado",{
   nombres: varchar("nombres", {length: 100}).notNull(),
   apellidos: varchar("apellidos", {length: 100}).notNull(),
   tipo_documento: DocumentoEnum().notNull(),
-  numero_documento: varchar("numero_documento", {length: 12}).unique().notNull(),
+  numero_documento: varchar("numero_documento").unique().notNull(),
   cargo: varchar("cargo", {length: 100}).notNull(),
   tipo_personal: TipoPersonalEnum().notNull(),
-  fecha_ingreso: timestamp("fecha_ingreso", { mode: 'date'}).notNull(),
+  fecha_ingreso: timestamp("fecha_ingreso").notNull(),
   fecha_nacimiento: timestamp("fecha_nacimiento", { 
     mode: 'date', 
     precision: 3,

@@ -117,18 +117,13 @@ export class EmpleadoService extends BaseDrizzleService{
 
       await this.db
         .insert(EmpleadoTable)
-        .values({ ...createEmpleadoDto, 
-          fecha_ingreso: createEmpleadoDto.fecha_ingreso,
-          fecha_nacimiento: createEmpleadoDto.fecha_nacimiento,
-        });
+        .values({ ...createEmpleadoDto })
 
       return {
         message: "Área creada correctamente"
       }
 
     } catch (error) {
-      console.error("Error real del posgres: ", error.message);
-      console.error("Dato enviado: ", createEmpleadoDto.fecha_ingreso);
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         `Ocurrió un error con el sistema: ${error}`,
