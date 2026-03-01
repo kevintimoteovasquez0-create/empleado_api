@@ -112,7 +112,12 @@ export class CreateEmpleadoDto {
     type: String,
     format: 'date',
   })
-  @Transform(({ value }) => value ? new Date(value) : value)
+  @Transform(({ value }) => { 
+    if (typeof value === 'string') 
+      { const date = new Date(value); 
+      return isNaN(date.getTime()) ? value : date; 
+    };
+  })
   @IsDate({ message: "El formato de la fecha de ingreso no es válido." })
   @IsNotEmpty({ message: "La fecha de ingreso es un campo requerido." })
   fecha_ingreso: Date;
@@ -123,7 +128,12 @@ export class CreateEmpleadoDto {
     type: String,
     format: 'date',
   })
-  @Transform(({ value }) => value ? new Date(value) : value)
+  @Transform(({ value }) => { 
+  if (typeof value === 'string') { 
+    const date = new Date(value); 
+    return isNaN(date.getTime()) ? value : date; 
+    } 
+  })
   @IsDate({ message: "El formato de la fecha de nacimiento no es válido." })
   @IsNotEmpty({ message: "La fecha de nacimiento es un campo requerido." })
   fecha_nacimiento: Date;
