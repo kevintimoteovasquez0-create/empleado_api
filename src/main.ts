@@ -7,7 +7,6 @@ import { join } from 'path';
 import cookieParser from 'cookie-parser';//importo una herramienta suelta
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-
 async function bootstrap() {  //incluiye el framework de diseño 
 
   const logger = new Logger('main-empresoftperu')
@@ -20,6 +19,7 @@ async function bootstrap() {  //incluiye el framework de diseño
 
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
+    forbidNonWhitelisted: true,
     transform: true,
     exceptionFactory: (errors) => {  // cuando resivas una lista de errores has lo siguiente
       const formattedErrors = errors.map((error) => ({

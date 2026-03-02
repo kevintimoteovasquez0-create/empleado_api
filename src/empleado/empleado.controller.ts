@@ -136,6 +136,18 @@ export class EmpleadoController {
 
   //--------------------------------------------
 
+  @Patch(":id")
+  updatePartialEmpleado(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() updateEmpleadoDto: UpdateEmpleadoDto
+  ) {
+    return this.empleadoService.updateEmpleados(id, updateEmpleadoDto);
+  }
+
+
+
+//--------------------------------------------
+
   @Patch(":id/restore")
   @ApiOperation({
     summary: 'Restaurar empleado',

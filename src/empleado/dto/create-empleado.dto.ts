@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsDate, IsEmail, IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, Length, Matches, MaxLength, ValidateIf } from "class-validator";
-
+import { IsNumberString, IsDate, IsEmail, IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, Length, Matches, MaxLength, ValidateIf } from "class-validator";
+import { ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments, Validate } from "class-validator";
 export enum DocumentoEnumDto {
   DNI = 'dni',
   CARNET_EXTRANJERIA = 'carnet_extranjeria',
@@ -17,6 +17,36 @@ export enum EstadoLegajoEnum {
   PENDIENTE = 'pendiente',
   OBSERVADO = 'observado',
 }
+@ValidatorConstraint({ name: 'DocumentoValidator', async: false })
+export class DocumentoValidator implements ValidatorConstraintInterface {
+  validate(value: string, args: ValidationArguments) {
+    const object: any = args.object;
+    if (object.tipo_documento === DocumentoEnumDto.DNI) {
+      return /^\d{8}$/.test(value);
+    }
+    if (object.tipo_documento === DocumentoEnumDto.CARNET_EXTRANJERIA) {
+      return /^\d{9,12}$/.test(value);
+    }
+    return false;
+  }
+
+  defaultMessage(args: ValidationArguments) {
+    const object: any = args.object;
+    if (object.tipo_documento === DocumentoEnumDto.DNI) {
+      return 'El DNI debe tener exactamente 8 dígitos.';
+    }
+    if (object.tipo_documento === DocumentoEnumDto.CARNET_EXTRANJERIA) {
+      return 'El carnet de extranjería debe tener entre 9 y 12 dígitos.';
+    }
+    return 'Número de documento inválido.';
+  }
+}
+
+
+
+
+
+
 
 export class CreateEmpleadoDto {
 
@@ -75,15 +105,7 @@ export class CreateEmpleadoDto {
     description: 'Número de documento según el tipo seleccionado',
     example: '74859632',
   })
-  @IsString()
-  @ValidateIf(o => o.tipo_documento === DocumentoEnumDto.DNI)
-  @Length(8, 8, {
-    message: "El DNI debe tener 8 caracteres",
-  })
-  @ValidateIf(o => o.tipo_documento === DocumentoEnumDto.CARNET_EXTRANJERIA)
-  @Length(9, 12, {
-    message: "Carnet de extranjeria inválido",
-  })
+  @Validate(DocumentoValidator)
   numero_documento: string;
 
   @ApiProperty({
@@ -91,6 +113,9 @@ export class CreateEmpleadoDto {
     example: 'Analista de Sistemas',
     maxLength: 100,
   })
+  
+  
+
   @Transform(({ value }) => value?.trim())
   @IsNotEmpty({ message: 'El cargo es obligatorio.' })
   @IsString({ message: 'El cargo debe ser texto.' })
@@ -108,7 +133,7 @@ export class CreateEmpleadoDto {
 
   @ApiProperty({
     description: 'Fecha de ingreso del empleado',
-    example: '2024-01-15',
+    example: '2024-01-15 00:00:000',
     type: String,
     format: 'date',
   })
@@ -124,7 +149,7 @@ export class CreateEmpleadoDto {
 
   @ApiProperty({
     description: 'Fecha de nacimiento del empleado',
-    example: '1998-05-20',
+    example: '1998-05-20 00:00.000',
     type: String,
     format: 'date',
   })
